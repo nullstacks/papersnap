@@ -76,13 +76,15 @@ export function ResultPage({
         {copy.title}
       </h1>
 
-      <div className="mb-6 flex flex-wrap items-center justify-center gap-3">
+      {/* The row must be free to grow: a fixed-width button wrapped the longer
+          labels ("Download merged PDF") onto two lines. */}
+      <div className="mb-6 flex w-full flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
         <button
           type="button"
           onClick={onBack}
           title="Back to files"
           aria-label="Back to files"
-          className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border-0 bg-[#47474f] text-white shadow-btn hover:bg-[#161616] dark:bg-[#3a3a45] dark:hover:bg-[#4a4a58]"
+          className="order-2 flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border-0 bg-[#47474f] text-white shadow-btn hover:bg-[#161616] dark:bg-[#3a3a45] dark:hover:bg-[#4a4a58] sm:order-1"
         >
           <img src={ICONS.arrowLeft} alt="" aria-hidden="true" className="h-[18px] w-[18px] invert" />
         </button>
@@ -90,16 +92,15 @@ export function ResultPage({
         <button
           type="button"
           onClick={primary ? () => onDownloadOne(primary) : onDownloadAll}
-          /* nowrap keeps the label on one line from tablet up; on a phone the
-             button is full width so the shorter text still fits. */
-          className="inline-flex min-h-[56px] w-full max-w-[330px] items-center justify-center gap-3 rounded-xl border-0 bg-brand px-6 py-4 text-[18px] leading-6 font-medium whitespace-nowrap text-white shadow-btn transition-colors hover:bg-brand-dark sm:w-auto sm:max-w-none sm:px-10 sm:py-6 sm:text-[24px] sm:leading-7"
-          style={{ minWidth: 0 }}
+          /* nowrap from tablet up keeps the label on one line; on a phone the
+             button is full width, which the shorter line still fits. */
+          className="order-1 inline-flex min-h-[56px] w-full max-w-[360px] items-center justify-center gap-3 rounded-xl border-0 bg-brand px-6 py-4 text-[18px] leading-6 font-medium whitespace-nowrap text-white shadow-btn transition-colors hover:bg-brand-dark sm:order-2 sm:w-auto sm:max-w-none sm:px-10 sm:py-6 sm:text-[24px] sm:leading-7"
         >
           <img src={ICONS.download} alt="" aria-hidden="true" className="h-[22px] w-[22px] shrink-0" />
           {copy.action}
         </button>
 
-        <div className="flex flex-row gap-2 sm:flex-col">
+        <div className="order-3 flex flex-row gap-2 sm:flex-col">
           <button
             type="button"
             onClick={() => primary && onPreview(primary)}

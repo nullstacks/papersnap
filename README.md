@@ -23,7 +23,7 @@ would 404 on refresh and on shared deep links. Every route lives under `#/`
 (`/#/merge-pdf`), which always resolves to `index.html`. A copy of
 `index.html` is also published as `404.html` so stray paths still boot the app.
 
-## Tools (36)
+## Tools (30)
 
 Two families share one shell. The PDF half follows iLovePDF's layout and
 wording; the image half follows iLoveIMG's, down to its blue CTA — which is why
@@ -36,9 +36,8 @@ wording; the image half follows iLoveIMG's, down to its blue CTA — which is wh
 **PDF — Edit** — Rotate, Page numbers, Watermark, Crop
 **PDF — Security** — Unlock, Protect (AES-256), Sign
 
-**IMAGE — Optimize** — Compress, Resize, Upscale
-**IMAGE — Edit** — Crop, Rotate, Photo editor, Watermark, Blur face,
-Remove background
+**IMAGE — Optimize** — Compress, Resize
+**IMAGE — Edit** — Crop, Rotate, Photo editor, Watermark, Blur face
 **IMAGE — Convert** — Convert to JPG, Convert from JPG, HTML to image
 **IMAGE — Create** — Meme generator
 
@@ -73,13 +72,11 @@ layout, rebuilt to run locally:
 | --- | --- |
 | Compress IMAGE | Re-encode at three levels; refuses to return a bigger file |
 | Resize IMAGE | Pixels or percentage, ratio lock, no-enlarge guard |
-| Upscale | 2x/4x progressive resample plus a sharpen pass |
 | Crop IMAGE | Draggable 8-handle box, aspect presets, flip, rotate |
 | Rotate IMAGE | Per-file right/left queue with flips, matching the card control |
 | Photo editor | Tabbed editor: filters, resize, crop, transform, draw, text, shapes, frame, background |
 | Watermark IMAGE | Text or logo, position, opacity, angle, tiled mode |
 | Blur face | Optional skin-tone detection plus a hand-drawn region editor |
-| Remove background | Edge-colour flood fill, transparent or flat colour |
 | Convert to JPG | Quality presets, transparency flattened onto white |
 | Convert from JPG | PNG or GIF output with static/animated choice |
 | HTML to image | Renders pasted markup off-screen and rasterises it |

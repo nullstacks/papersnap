@@ -66,7 +66,6 @@ const NO_SIZE_STATS = new Set([
   'watermark-image',
   'blur-face',
   'photo-editor',
-  'remove-background',
   'html-to-image',
   'sign-pdf',
   'page-numbers',
@@ -86,12 +85,6 @@ const CONTINUE_BY_TOOL: Record<string, Array<[string, string]>> = {
     ['jpg-to-image', 'Convert from JPG'],
     ['watermark-image', 'Watermark IMAGE'],
   ],
-  'upscale-image': [
-    ['resize-image', 'Resize IMAGE'],
-    ['crop-image', 'Crop IMAGE'],
-    ['compress-image', 'Compress IMAGE'],
-    ['watermark-image', 'Watermark IMAGE'],
-  ],
   'watermark-image': [
     ['compress-image', 'Compress IMAGE'],
     ['resize-image', 'Resize IMAGE'],
@@ -101,11 +94,6 @@ const CONTINUE_BY_TOOL: Record<string, Array<[string, string]>> = {
     ['crop-image', 'Crop IMAGE'],
     ['compress-image', 'Compress IMAGE'],
     ['watermark-image', 'Watermark IMAGE'],
-  ],
-  'remove-background': [
-    ['crop-image', 'Crop IMAGE'],
-    ['resize-image', 'Resize IMAGE'],
-    ['compress-image', 'Compress IMAGE'],
   ],
   'meme-generator': [
     ['crop-image', 'Crop IMAGE'],

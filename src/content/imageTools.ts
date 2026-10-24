@@ -41,6 +41,8 @@ export const IMAGE_TOOLS: ToolDef[] = [
   },
   {
     slug: 'upscale-image',
+    /* No local equivalent of what the hosted services do with a model; see ToolDef.hidden. */
+    hidden: true,
     panelTitle: 'Upscale options',
     category: 'image-optimize',
     group: 'Optimize IMAGE',
@@ -131,6 +133,8 @@ export const IMAGE_TOOLS: ToolDef[] = [
   },
   {
     slug: 'remove-background',
+    /* Same: a colour-key cut-out is not the AI result people now expect. */
+    hidden: true,
     panelTitle: 'Remove background',
     category: 'image-edit',
     group: 'Edit IMAGE',
@@ -233,7 +237,7 @@ export interface NavGroupDef {
 
 /** Sidebar grouping for the image family, in the reference's order. */
 export const IMAGE_NAV_GROUPS: NavGroupDef[] = [
-  { title: 'Optimize IMAGE', tools: ['compress-image', 'resize-image', 'upscale-image'] },
+  { title: 'Optimize IMAGE', tools: ['compress-image', 'resize-image'] },
   {
     title: 'Edit IMAGE',
     tools: [
@@ -242,7 +246,6 @@ export const IMAGE_NAV_GROUPS: NavGroupDef[] = [
       'photo-editor',
       'watermark-image',
       'blur-face',
-      'remove-background',
     ],
   },
   { title: 'Convert IMAGE', tools: ['convert-to-jpg', 'jpg-to-image', 'html-to-image'] },

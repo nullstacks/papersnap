@@ -2313,6 +2313,9 @@ function PhotoEditor({
    * keeps the visible pixels and the saved pixels on one code path.
    */
   const surfaceRef = useRef<HTMLCanvasElement | null>(null);
+
+  /* The column the picture is fitted into; measured, never guessed. */
+  const viewportRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const node = surfaceRef.current;
     if (!node || !preview) return;
@@ -2502,25 +2505,32 @@ function PhotoEditor({
 
   /* --- the fitted size -------------------------------------------------- */
 
+  /*
+   * The fit target is measured from the canvas column itself rather than
+   * derived from the window width. The old arithmetic subtracted a fixed 742px
+   * of chrome, which is only true on a wide screen: on a phone it produced a
+   * negative width clamped to 280px, so the picture overflowed a column that
+   * was nowhere near that wide. Reading the element is also the only version
+   * that stays correct when the layout stacks.
+   */
   const [room, setRoom] = useState({ width: 820, height: 560 });
   useEffect(() => {
+    const node = viewportRef.current;
+    if (!node) return;
     const measure = () => {
-      /*
-       * The fit target is the column the picture actually has: the window less
-       * the tool sidebar, the tab rail and this editor's own control column.
-       * The editor scrolls if a window is narrower than that, so the numbers
-       * only have to be close.
-       */
-      const chrome = 72 + 250 + 300 + 120;
+      const rect = node.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
       setRoom({
-        width: Math.max(280, Math.min(1400, window.innerWidth - chrome)),
-        height: Math.max(220, window.innerHeight - 60 - 150),
+        /* The padding is inside the measured box, so take it back off. */
+        width: Math.max(120, Math.floor(rect.width - 32)),
+        height: Math.max(120, Math.floor(rect.height - 32)),
       });
     };
     measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, []);
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [file]);
 
   const size = preview ? { width: preview.width, height: preview.height } : { width: 1, height: 1 };
   const fitScale =
@@ -2533,9 +2543,18 @@ function PhotoEditor({
   };
 
   return (
-    <div className="flex min-h-[540px] items-stretch overflow-hidden rounded-xl border border-line bg-surface text-left shadow-card">
+    /*
+     * Phones stack: tab rail on top as a horizontal strip, then the canvas, then
+     * the tab's controls. A 72px rail plus a 250px control column plus a canvas
+     * cannot share 360px, and the old row layout squeezed the picture to a
+     * sliver. From md up there is room for the three-column arrangement.
+     */
+    <div className="flex min-h-[540px] flex-col items-stretch overflow-hidden rounded-xl border border-line bg-surface text-left shadow-card md:flex-row">
       {/* ---------- left rail ---------- */}
-      <nav aria-label="Editor tools" className="flex w-[72px] shrink-0 flex-col overflow-y-auto border-r border-line bg-surface py-1">
+      <nav
+        aria-label="Editor tools"
+        className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-line bg-surface py-1 md:w-[72px] md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-b-0"
+      >
         {TABS.map((tab) => {
           const active = state.tab === tab.id;
           return (
@@ -2545,7 +2564,9 @@ function PhotoEditor({
               onClick={() => dispatch({ type: 'tab', tab: tab.id })}
               aria-pressed={active}
               className={
-                'flex w-full flex-col items-center gap-1 px-1 py-2.5 text-[9px] leading-[12px] font-medium tracking-wide uppercase ' +
+                /* Fixed-width cells on the phone strip so they scroll evenly;
+                   full-width rows once the rail is vertical. */
+                'flex w-[68px] shrink-0 flex-col items-center gap-1 px-1 py-2.5 text-[9px] leading-[12px] font-medium tracking-wide uppercase md:w-full ' +
                 (active
                   ? 'bg-img-soft text-img-ink'
                   : 'text-muted hover:bg-canvas hover:text-ink-2')
@@ -2644,7 +2665,13 @@ function PhotoEditor({
           </span>
         </div>
 
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4">
+        <div
+          ref={viewportRef}
+          /* On a phone the canvas is the point, so it gets a healthy share of
+             the screen before the controls start; on wider screens the row
+             layout already gives it everything left over. */
+          className="flex min-h-[46vh] min-w-0 flex-1 items-center justify-center overflow-auto p-4 md:min-h-[220px]"
+        >
           {file && preview ? (
             <div
               role="presentation"
@@ -2701,7 +2728,7 @@ function PhotoEditor({
       <div
         role="group"
         aria-label="Editor controls"
-        className="w-[250px] shrink-0 overflow-y-auto border-l border-line bg-surface p-4"
+        className="w-full shrink-0 overflow-y-auto border-t border-line bg-surface p-4 md:w-[250px] md:border-t-0 md:border-l"
       >
         {state.tab === 'light' && <LightColumn state={state} dispatch={dispatch} />}
         {state.tab === 'resize' && (

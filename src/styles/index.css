@@ -2,7 +2,7 @@
 @import './fonts.css';
 
 /*
- * PDFDock design system.
+ * PaperSnap design system.
  *
  * Every token below was read off the reference tool pages (computed styles +
  * the live stylesheet), so the palette, type scale and spacing match exactly
@@ -50,6 +50,9 @@
 
   /* Type */
   --font-sans: Graphik, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  /* Wordmark face: a didone with strong stroke contrast, used only for the
+     PAPER SNAP lockup so it never competes with UI text. */
+  --font-brand: 'Bodoni Moda', Didot, 'Bodoni MT', Georgia, serif;
   --text-title: 42px;
   --text-title--line-height: 52px;
   --text-subtitle: 22px;

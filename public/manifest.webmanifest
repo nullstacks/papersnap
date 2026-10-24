@@ -1,10 +1,10 @@
 {
-  "name": "PDFDock — PDF tools that run in your browser",
-  "short_name": "PDFDock",
+  "name": "PaperSnap — PDF tools that run in your browser",
+  "short_name": "PaperSnap",
   "description": "Merge, split, compress, convert, rotate, unlock and watermark PDFs entirely in your browser. No uploads, no server.",
   "start_url": "./",
   "scope": "./",
-  "id": "/pdfdock/",
+  "id": "/papersnap/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f5f5fa",

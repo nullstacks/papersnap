@@ -223,8 +223,8 @@ export async function buildDocx({
     '<dc:title>' +
     esc(title) +
     '</dc:title>' +
-    '<dc:creator>PDFDock</dc:creator>' +
-    '<cp:lastModifiedBy>PDFDock</cp:lastModifiedBy>' +
+    '<dc:creator>PaperSnap</dc:creator>' +
+    '<cp:lastModifiedBy>PaperSnap</cp:lastModifiedBy>' +
     '<dcterms:created xsi:type="dcterms:W3CDTF">' +
     now +
     '</dcterms:created>' +
@@ -236,7 +236,7 @@ export async function buildDocx({
   const app =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">' +
-    '<Application>PDFDock</Application></Properties>';
+    '<Application>PaperSnap</Application></Properties>';
 
   zip.file('[Content_Types].xml', contentTypes);
   zip.folder('_rels')?.file('.rels', rels);

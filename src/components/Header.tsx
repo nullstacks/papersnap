@@ -10,7 +10,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { NAV_GROUPS, NAV_PRIMARY, TOOL_BY_SLUG } from '@/content/tools';
-import brandMark from '@/assets/img/brand.svg';
+import wordmarkLight from '@/assets/img/wordmark-light.svg';
+import wordmarkDark from '@/assets/img/wordmark-dark.svg';
 import { useTheme } from '@/hooks/useTheme';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { ICONS } from './Icons';
@@ -113,13 +114,27 @@ export function Header() {
       <nav ref={navRef} className="flex h-[60px] items-center gap-1 sm:gap-2">
         <Link
           to="/"
-          className="mr-1 flex shrink-0 items-center gap-2 no-underline sm:mr-3.5"
-          aria-label="PDFDock home"
+          className="mr-1 flex shrink-0 items-center no-underline sm:mr-3.5"
+          aria-label="PaperSnap home"
         >
-          <img src={brandMark} alt="" width={34} height={32} className="block h-7 w-auto sm:h-8" />
-          <span className="text-[19px] leading-none font-bold tracking-[-0.4px] whitespace-nowrap text-ink sm:text-[22px]">
-            PDF<span className="font-medium text-brand">Dock</span>
-          </span>
+          {/*
+           * The supplied lockup: PAPER [mark] SNAP as one piece of artwork, with
+           * the lettering as vector paths and the mark embedded. Two files exist
+           * solely because the lettering is near-black and would vanish on the
+           * dark theme; the geometry is identical, so swapping between them
+           * cannot shift the layout.
+           *
+           * The 576x67 viewBox gives a 8.6:1 aspect, so height drives the size
+           * and the width follows automatically.
+           */}
+          <img
+            src={theme === 'dark' ? wordmarkDark : wordmarkLight}
+            alt="PaperSnap"
+            width={576}
+            height={67}
+            className="block h-[22px] w-auto select-none sm:h-[26px]"
+            draggable={false}
+          />
         </Link>
 
         {/* ---------- desktop navigation ---------- */}
@@ -188,7 +203,7 @@ export function Header() {
             <button
               type="button"
               onClick={install.install}
-              title="Install PDFDock as an app"
+              title="Install PaperSnap as an app"
               className="hidden h-9 items-center gap-2 rounded-full border border-line bg-surface px-3 text-[13px] font-medium text-ink-2 hover:border-muted md:flex"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

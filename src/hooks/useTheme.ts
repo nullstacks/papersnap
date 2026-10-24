@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 export type Theme = 'light' | 'dark';
 
-const KEY = 'pdfdock-theme';
+const KEY = 'papersnap-theme';
 
 function read(): Theme {
   try {

@@ -40,3 +40,19 @@
   font-style: normal;
   font-display: swap;
 }
+
+/*
+ * Bodoni Moda Bold — the wordmark face. A high-contrast didone gives
+ * "PAPER SNAP" the editorial, print-like character the brand is after, which
+ * Graphik (a grotesque) cannot.
+ *
+ * Self-hosted Latin subset, so the logo renders offline and without any
+ * third-party request.
+ */
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('../assets/fonts/BodoniModa-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

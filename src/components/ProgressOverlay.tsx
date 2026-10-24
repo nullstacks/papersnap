@@ -20,7 +20,7 @@ export function ProgressOverlay({ stage, percent }: Props) {
       role="status"
       aria-live="polite"
     >
-      <img src={brandMark} alt="PDFDock" className="mb-12 h-10 w-auto" />
+      <img src={brandMark} alt="PaperSnap" className="mb-12 h-10 w-auto" />
 
       <div className="mb-6 text-[22px] leading-8 font-semibold text-ink-2">{stage}</div>
 

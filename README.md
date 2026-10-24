@@ -1,4 +1,4 @@
-# PDFDock
+# PaperSnap
 
 A complete, fully local PDF toolkit — a React + TypeScript single-page app.
 Every tool runs inside the browser tab: no server, no uploads, no accounts.
@@ -14,6 +14,7 @@ Every tool runs inside the browser tab: no server, no uploads, no accounts.
 | PDF structure | `@cantoo/pdf-lib` |
 | PDF rendering / text | `pdfjs-dist` (real worker, bundled) |
 | DOCX / XLSX / PPTX / HTML | `mammoth`, `jszip`, `xlsx`, `pptxgenjs`, `html2canvas` |
+| Wordmark | Bodoni Moda Bold (self-hosted Latin subset) |
 
 ### Why HashRouter
 
@@ -37,11 +38,30 @@ would 404 on refresh and on shared deep links. Every route lives under `#/`
   results handed back as `Blob` downloads.
 - **Drag & drop** anywhere on the tool page, with a full-bleed drop overlay.
 - **Drag to reorder** file cards; the order is what gets merged.
+- **Page picking** for Remove / Extract / Split happens on the canvas, where
+  the thumbnails are legible — click to toggle, shift-click for a range.
 - **Light and dark themes**, remembered across visits and applied before first
   paint (no flash).
+- **Installable app** with an offline service worker.
 - **Fully responsive** — a 300px options column on desktop, a slide-up settings
   sheet on phones.
-- **Offline-capable** once loaded.
+
+## Brand
+
+The wordmark is `PAPER [mark] SNAP`: two words in Bodoni Moda Bold, all caps,
+with the document-and-heart mark set between them. Assets are generated from the
+source artwork by `_gen/make-brand.py`:
+
+| File | Purpose |
+| --- | --- |
+| `public/img/brand.svg` | Vector mark used in the header lockup |
+| `public/img/app-icon-{192,512}.png` | PWA "any" icons |
+| `public/img/app-icon-maskable-*.png` | Android maskable icons (safe-zone inset) |
+| `public/img/apple-touch-icon.png` | iOS home-screen icon |
+| `public/img/favicons-pdf/favicon-*` | Browser tabs |
+
+The font lives at `src/assets/fonts/BodoniModa-Bold.woff2` and is referenced as
+`var(--font-brand)`.
 
 ## Develop
 
@@ -73,9 +93,10 @@ and the bundled PDF worker resolve correctly under `/<repo>/`.
 
 ```
 src/
-  components/     shell, tool page, cards, uploader, result + preview views
+  assets/         fonts (Graphik, Bodoni Moda) and the brand mark
+  components/     shell, tool page, cards, uploader, page grid, result views
   content/        generated tool catalogue (copy + icons + nav groups)
-  hooks/          theme
+  hooks/          theme, install prompt
   lib/            PDF engine (pdf-lib + pdf.js) and format helpers
   pages/          home, not-found
   styles/         Tailwind entry, design tokens, dark theme
@@ -83,9 +104,10 @@ src/
   types.ts        shared domain types
 ```
 
-Each tool is a `ToolImpl`: a React `Panel` plus a `run()` that returns
-`ResultFile[]`. Tool modules are loaded on demand, so the landing page never
-downloads the PDF engine.
+Each tool is a `ToolImpl`: a `Panel` for the options column, an optional
+`Workarea` for canvas content such as page grids, and a `run()` returning
+`ResultFile[]`. Tool modules load on demand, so the landing page never downloads
+the PDF engine.
 
-`src/content/tools.ts` is generated from `_gen/gen-tools.mjs`; edit the
-generator (not the output) when changing catalogue copy or the header nav.
+`src/content/tools.ts` is generated from `_gen/gen-tools.mjs`; edit the generator
+(not the output) when changing catalogue copy or the header nav.

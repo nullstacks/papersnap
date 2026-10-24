@@ -254,8 +254,9 @@ export const protectTool: ToolImpl = {
       doc.encrypt({
         algorithm: 'AES-256',
         userPassword: pw,
-        /* A distinct owner password keeps the permission bits enforceable. */
-        ownerPassword: `${pw}#${f.name || 'pdfdock'}`,
+        /* A distinct owner password keeps the permission bits enforceable.
+           The suffix is only a salt, so it stays stable across rebrands. */
+        ownerPassword: `${pw}#${f.name || 'document'}`,
         permissions: {
           printing: allowPrint ? 'highResolution' : undefined,
           copying: allowCopy,

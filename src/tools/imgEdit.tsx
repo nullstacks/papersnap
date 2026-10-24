@@ -1038,7 +1038,7 @@ function RotateImagePanel({ files, values, setValue, requestUpdate }: PanelProps
         <button
           type="button"
           onClick={resetAll}
-          className="text-[13px] font-medium text-img hover:underline"
+          className="text-[13px] font-medium text-img-ink hover:underline"
         >
           Reset all
         </button>

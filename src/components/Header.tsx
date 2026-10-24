@@ -167,8 +167,8 @@ export function Header() {
                   <Link
                     to={`/${slug}`}
                     className={`flex h-[60px] items-center px-2.5 text-[13.5px] font-medium uppercase whitespace-nowrap no-underline ${
-                      imageLink ? 'hover:text-img' : 'hover:text-brand'
-                    } ${activeSlug === slug ? (imageLink ? 'text-img' : 'text-brand') : 'text-ink'}`}
+                      imageLink ? 'hover:text-img-ink' : 'hover:text-brand'
+                    } ${activeSlug === slug ? (imageLink ? 'text-img-ink' : 'text-brand') : 'text-ink'}`}
                   >
                     {label}
                   </Link>
@@ -200,7 +200,7 @@ export function Header() {
             <li className="relative flex h-full items-center">
               <button
                 type="button"
-                className={`${trigger} whitespace-nowrap hover:text-img`}
+                className={`${trigger} whitespace-nowrap hover:text-img-ink`}
                 aria-expanded={open === 'image'}
                 onClick={() => toggle('image')}
               >

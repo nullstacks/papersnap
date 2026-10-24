@@ -22,6 +22,14 @@
   --color-img: #4d90fe;
   --color-img-dark: #2f7bf0;
   --color-img-soft: #e8f0ff;
+  /*
+   * A darker blue for text on a light surface.
+   *
+   * The CTA blue (#4d90fe) is right for fills and large type, but at 13.5px on
+   * white it measures 3.1:1 and fails AA. This shade reaches 5.1:1, so labels
+   * and active nav links stay legible without changing the brand fill.
+   */
+  --color-img-ink: #1a5fd0;
   /* The tool tab strip under a panel title. */
   --color-img-tab: #4d90fe;
 

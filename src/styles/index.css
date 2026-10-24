@@ -343,6 +343,20 @@
   --color-brand-dark: #d22722;
   --color-brand-soft: #3a1b1a;
 
+  /*
+   * The image accent splits in two for dark mode.
+   *
+   * --color-img is a FILL that carries white text, so it must stay dark enough
+   * for that white to read: lightening it was a regression, not a fix.
+   * --color-img-ink is TEXT on a dark surface, where the light-mode #1a5fd0
+   * measures about 1.9:1 and is unreadable. Fills and text therefore use
+   * different tokens, which is exactly why both exist.
+   */
+  --color-img: #4d90fe;
+  --color-img-dark: #2f7bf0;
+  --color-img-soft: #16243c;
+  --color-img-ink: #8fbaff;
+
   --color-ink: #f2f2f6;
   --color-ink-2: #dcdce4;
   --color-body: #b6b6c2;

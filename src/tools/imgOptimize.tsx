@@ -177,7 +177,7 @@ function ResizePanel({ values, files, setValue }: PanelProps) {
             aria-pressed={mode === value}
             className={`rounded-lg border-2 px-2 py-2.5 text-[14px] font-medium ${
               mode === value
-                ? 'border-img bg-img-soft text-img-dark'
+                ? 'border-img bg-img-soft text-img-ink'
                 : 'border-line bg-surface text-muted hover:border-muted'
             }`}
           >

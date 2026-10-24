@@ -1292,7 +1292,7 @@ function Segments<T extends string>({
             className={
               'rounded-md border px-2 py-1 text-[12px] font-medium ' +
               (active
-                ? 'border-img bg-img-soft text-img-dark'
+                ? 'border-img bg-img-soft text-img-ink'
                 : 'border-line bg-surface text-muted hover:border-muted')
             }
           >
@@ -2001,7 +2001,7 @@ function FrameColumn({ state, dispatch }: { state: EditorState; dispatch: (actio
               className={
                 'rounded-lg border px-2 py-3 text-[13px] font-medium ' +
                 (active
-                  ? 'border-img bg-img-soft text-img-dark'
+                  ? 'border-img bg-img-soft text-img-ink'
                   : 'border-line bg-surface text-muted hover:border-muted')
               }
             >
@@ -2547,7 +2547,7 @@ function PhotoEditor({
               className={
                 'flex w-full flex-col items-center gap-1 px-1 py-2.5 text-[9px] leading-[12px] font-medium tracking-wide uppercase ' +
                 (active
-                  ? 'bg-img-soft text-img-dark'
+                  ? 'bg-img-soft text-img-ink'
                   : 'text-muted hover:bg-canvas hover:text-ink-2')
               }
             >
@@ -2562,7 +2562,7 @@ function PhotoEditor({
       <div className="flex min-w-0 flex-1 flex-col bg-canvas">
         <div className="flex items-center gap-2 border-b border-line bg-surface px-3 py-2">
           <label
-            className="cursor-pointer rounded-md border border-img bg-surface px-3 py-1.5 text-[13px] font-medium text-img-dark hover:bg-img-soft"
+            className="cursor-pointer rounded-md border border-img bg-surface px-3 py-1.5 text-[13px] font-medium text-img-ink hover:bg-img-soft"
             title="Open another picture into the editor"
           >
             Open
@@ -2694,8 +2694,15 @@ function PhotoEditor({
         </div>
       </div>
 
-      {/* ---------- right column ---------- */}
-      <aside className="w-[250px] shrink-0 overflow-y-auto border-l border-line bg-surface p-4">
+      {/* ---------- right column ----------
+          A labelled region rather than an <aside>: the tool shell already owns
+          the page's complementary landmark, and two unnamed asides make the
+          landmark structure ambiguous for a screen reader. */}
+      <div
+        role="group"
+        aria-label="Editor controls"
+        className="w-[250px] shrink-0 overflow-y-auto border-l border-line bg-surface p-4"
+      >
         {state.tab === 'light' && <LightColumn state={state} dispatch={dispatch} />}
         {state.tab === 'resize' && (
           <ResizeColumn
@@ -2720,7 +2727,7 @@ function PhotoEditor({
         {state.tab === 'corners' && <CornersColumn state={state} dispatch={dispatch} />}
         {state.tab === 'background' && <BackgroundColumn state={state} dispatch={dispatch} />}
         {state.tab === 'merge' && <MergeColumn state={state} dispatch={dispatch} />}
-      </aside>
+      </div>
     </div>
   );
 }

@@ -522,7 +522,7 @@ function ChipRow<T extends string>({
             onClick={() => onChange(o.value)}
             className={`min-w-0 flex-1 rounded-lg border px-0.5 py-2 text-[10px] leading-[14px] font-semibold ${
               active
-                ? 'border-img bg-img-soft text-img-dark'
+                ? 'border-img bg-img-soft text-img-ink'
                 : 'border-line bg-canvas text-muted hover:border-muted'
             }`}
           >

@@ -582,7 +582,7 @@ function CropWorkarea({ files, values, setValue, requestUpdate }: WorkareaProps)
                   className={cx(
                     'rounded-md border px-2.5 py-1.5 text-[13px] font-medium',
                     active
-                      ? 'border-img bg-img-soft text-img-dark'
+                      ? 'border-img bg-img-soft text-img-ink'
                       : 'border-line bg-surface text-muted hover:border-muted hover:text-ink-2',
                   )}
                 >
@@ -1023,7 +1023,7 @@ function RotateImagePanel({ files, values, setValue, requestUpdate }: PanelProps
                 'flex flex-col items-center gap-1 rounded-lg border bg-surface px-1 py-2',
                 'text-[13px] font-medium',
                 active
-                  ? 'border-img text-img-dark'
+                  ? 'border-img text-img-ink'
                   : 'border-line text-muted hover:border-muted hover:text-ink-2',
               )}
             >

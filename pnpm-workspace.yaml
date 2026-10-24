@@ -1,2 +1,5 @@
-﻿onlyBuiltDependencies:
-  - esbuild
+# pnpm v11 removed `onlyBuiltDependencies` (a list) in favour of the
+# `allowBuilds` map. esbuild ships a native binary that its postinstall step
+# must fetch, and `vite build` fails without it.
+allowBuilds:
+  esbuild: true

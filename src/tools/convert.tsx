@@ -212,7 +212,7 @@ function PdfToJpgPanel({ files, values, setValue }: PanelProps) {
         </label>
         <select
           id="jpg-quality"
-          className={`${INPUT} pr-8 appearance-none cursor-pointer`}
+          className={`select-field cursor-pointer ${INPUT}`}
           value={text(values, 'jpg_quality', '2')}
           onChange={(e) => setValue('jpg_quality', e.target.value)}
         >
@@ -451,7 +451,7 @@ function JpgToPdfPanel({ values, setValue }: PanelProps) {
         </label>
         <select
           id="img-pagesize"
-          className={`${INPUT} pr-8 appearance-none cursor-pointer`}
+          className={`select-field cursor-pointer ${INPUT}`}
           value={text(values, 'img_pagesize', 'fit')}
           onChange={(e) => setValue('img_pagesize', e.target.value)}
         >

@@ -30,7 +30,7 @@ import type { PanelProps, ResultFile, ToolImpl, WorkFile } from '@/types';
 
 const INPUT =
   'h-8 w-full rounded border border-muted bg-surface px-3 text-sm text-ink focus:outline-none focus:border-ink';
-const SELECT = `${INPUT} pr-8 appearance-none cursor-pointer`;
+const SELECT = `select-field cursor-pointer ${INPUT}`;
 const AREA =
   'w-full resize-y rounded border border-muted bg-surface px-3 py-2 text-sm leading-relaxed text-ink focus:border-ink focus:outline-none';
 const FILE_INPUT = 'h-auto w-full rounded border border-muted bg-surface px-2.5 py-2 text-sm';

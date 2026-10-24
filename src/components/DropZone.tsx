@@ -26,7 +26,11 @@ interface Props {
  * `text/plain`, and an OS file drag publishes `Files`. Requiring `Files` and
  * rejecting `text/plain` keeps the two gestures apart.
  */
-function isExternalFileDrag(e: DragEvent): boolean {
+/**
+ * Exported because the work area needs the same test: it must highlight only
+ * for a drag that carries real files, never for an internal card reorder.
+ */
+export function isExternalFileDrag(e: DragEvent | React.DragEvent): boolean {
   const types = Array.from(e.dataTransfer?.types ?? []);
   return types.includes('Files');
 }

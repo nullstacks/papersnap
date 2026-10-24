@@ -207,6 +207,37 @@
     margin-bottom: 8px;
   }
 
+  /* ---------- selects with their own chevron ---------- */
+  /*
+   * A <select> styled with `appearance-none` loses the platform arrow, so the
+   * control reads as a plain text box. These carry their own chevron instead,
+   * drawn as an inline SVG whose stroke colour comes from a token: a data URI
+   * cannot inherit currentColor, so the light and dark variants are separate
+   * rules keyed on the theme root.
+   */
+  .select-field {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23707078' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1.5 2 4.5 4.5L10.5 2'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 11px 8px;
+    padding-right: 30px;
+  }
+
+  :root[data-theme='dark'] .select-field {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23b6b6c2' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1.5 2 4.5 4.5L10.5 2'/%3E%3C/svg%3E");
+  }
+
+  /* Native selects (the editor's zoom, the footer language) keep the platform
+     arrow, but a native arrow on a dark surface can still be dark. Forcing the
+     colour scheme per control makes the browser draw it for the right theme. */
+  select:not(.select-field) {
+    color-scheme: light;
+  }
+
+  :root[data-theme='dark'] select:not(.select-field) {
+    color-scheme: dark;
+  }
+
   /* ---------- blue information callout ---------- */
   .info-box {
     @apply text-ink;

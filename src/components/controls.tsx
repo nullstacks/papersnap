@@ -106,7 +106,7 @@ export function SelectField({
       )}
       <select
         id={id}
-        className={`${inputClass} cursor-pointer appearance-none pr-8`}
+        className={`select-field cursor-pointer ${inputClass}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >

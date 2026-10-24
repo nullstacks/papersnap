@@ -13,7 +13,7 @@ import { downloadBlob, prettySize } from '@/lib/pdf';
 import type { FieldValues, ResultFile, ToolImpl, WorkFile } from '@/types';
 import { FileCard } from './FileCard';
 import { FileZoom } from './FileZoom';
-import { DropZone } from './DropZone';
+import { DropZone, isExternalFileDrag } from './DropZone';
 import { Uploader } from './Uploader';
 import { ProcessButton } from './ProcessButton';
 import { ProgressOverlay } from './ProgressOverlay';
@@ -129,6 +129,24 @@ export function ToolPage({ slug }: { slug: string }) {
   /* A no-op state bump so panels can ask for readiness to be re-evaluated. */
   const [tick, forceTick] = useState(0);
   const requestUpdate = useCallback(() => forceTick((n) => n + 1), []);
+
+  /*
+   * A drag can end without ever reaching this area's own handlers: released
+   * outside the window, cancelled with Escape, or consumed by a child that
+   * stopped propagation. Any of those would otherwise leave the outline lit, so
+   * the gesture's own end events clear it too.
+   */
+  useEffect(() => {
+    const clear = () => setOver(false);
+    window.addEventListener('dragend', clear);
+    window.addEventListener('drop', clear);
+    window.addEventListener('blur', clear);
+    return () => {
+      window.removeEventListener('dragend', clear);
+      window.removeEventListener('drop', clear);
+      window.removeEventListener('blur', clear);
+    };
+  }, []);
 
   const sortByName = () =>
     setFiles((cur) =>
@@ -261,7 +279,16 @@ export function ToolPage({ slug }: { slug: string }) {
               : 'outline-3 -outline-offset-[14px] outline-dashed outline-brand'
             : ''
         }`}
+        /*
+         * The highlight is for files arriving from outside the browser, which is
+         * also the only case this area handles. Reordering a card is a drag too,
+         * but FileCard calls stopPropagation() on its own drop, so the clearing
+         * handler here never ran and the dashed outline stayed on screen until a
+         * refresh. Requiring real files fixes that at the source, and the
+         * window-level listeners below catch a gesture that ends off-target.
+         */
         onDragOver={(e) => {
+          if (!isExternalFileDrag(e)) return;
           e.preventDefault();
           setOver(true);
         }}

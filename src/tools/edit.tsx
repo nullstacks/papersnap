@@ -236,7 +236,7 @@ function PageNumbersPanel({ values, setValue }: PanelProps) {
           </label>
           <select
             id="pn-format"
-            className={`${INPUT} pr-8 appearance-none cursor-pointer`}
+            className={`select-field cursor-pointer ${INPUT}`}
             value={text(values, 'pn_format', 'n')}
             onChange={(e) => setValue('pn_format', e.target.value)}
           >

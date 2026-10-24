@@ -1,7 +1,7 @@
 {
-  "name": "PaperSnap — PDF tools that run in your browser",
+  "name": "PaperSnap — PDF and image tools that run in your browser",
   "short_name": "PaperSnap",
-  "description": "Merge, split, compress, convert, rotate, unlock and watermark PDFs entirely in your browser. No uploads, no server.",
+  "description": "Merge, split, compress, convert, rotate, unlock and watermark PDFs, and crop, resize, retouch and convert images. Everything runs in your browser: no uploads, no accounts, no server.",
   "start_url": "./",
   "scope": "./",
   "id": "/papersnap/",

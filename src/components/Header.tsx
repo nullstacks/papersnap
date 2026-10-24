@@ -9,19 +9,32 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { NAV_GROUPS, NAV_PRIMARY, TOOL_BY_SLUG } from '@/content/tools';
+import { ALL_NAV_GROUPS, TOOL_BY_SLUG } from '@/content/tools';
+import { IMAGE_NAV_GROUPS, IMAGE_TOOL_BY_SLUG, visibleSlugs } from '@/content/imageTools';
 import wordmarkLight from '@/assets/img/wordmark-light.svg';
 import wordmarkDark from '@/assets/img/wordmark-dark.svg';
 import { useTheme } from '@/hooks/useTheme';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { ICONS } from './Icons';
 
-const CONVERT_TO = ['jpg-to-pdf', 'word-to-pdf', 'powerpoint-to-pdf', 'excel-to-pdf', 'html-to-pdf'];
-const CONVERT_FROM = ['pdf-to-jpg', 'pdf-to-word', 'pdf-to-powerpoint', 'pdf-to-excel', 'convert-pdf-to-pdfa'];
+/**
+ * The six links in the top bar, in order.
+ *
+ * Two per family plus the two mega-menus: PDF's every-day pair, the image
+ * pair a visitor is most likely to want, then "All PDF tools" and "Image
+ * tools" for everything else. Keeping it to six is what lets the bar stay on
+ * one line from 1024px up without wrapping or clipping.
+ */
+const TOP_LINKS: Array<{ slug: string; label: string }> = [
+  { slug: 'merge-pdf', label: 'Merge PDF' },
+  { slug: 'compress-pdf', label: 'Compress PDF' },
+  { slug: 'compress-image', label: 'Compress IMAGE' },
+  { slug: 'convert-to-jpg', label: 'Convert to JPG' },
+];
 
 /** One row inside a dropdown: small tool icon plus its label. */
 function MenuItem({ slug, onNavigate }: { slug: string; onNavigate: () => void }) {
-  const tool = TOOL_BY_SLUG[slug];
+  const tool = TOOL_BY_SLUG[slug] ?? IMAGE_TOOL_BY_SLUG[slug];
   if (!tool) return null;
   return (
     <li>
@@ -53,7 +66,7 @@ function MenuColumn({
         {title}
       </div>
       <ul className="m-0 list-none p-0">
-        {slugs.map((s) => (
+        {visibleSlugs(slugs).map((s) => (
           <MenuItem key={s} slug={s} onNavigate={onNavigate} />
         ))}
       </ul>
@@ -64,7 +77,7 @@ function MenuColumn({
 export function Header() {
   const { pathname } = useLocation();
   const activeSlug = pathname.replace(/^\//, '');
-  const [open, setOpen] = useState<'convert' | 'all' | 'company' | null>(null);
+  const [open, setOpen] = useState<'convert' | 'all' | 'company' | 'image' | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const { theme, toggle: toggleTheme } = useTheme();
@@ -103,7 +116,7 @@ export function Header() {
     };
   }, [menuOpen]);
 
-  const toggle = (which: 'convert' | 'all' | 'company') =>
+  const toggle = (which: 'convert' | 'all' | 'company' | 'image') =>
     setOpen((cur) => (cur === which ? null : which));
 
   const trigger =
@@ -111,7 +124,7 @@ export function Header() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 h-[60px] border-b border-line bg-surface px-3 sm:px-6">
-      <nav ref={navRef} className="flex h-[60px] items-center gap-1 sm:gap-2">
+      <nav ref={navRef} className="flex h-[60px] min-w-0 items-center gap-1 sm:gap-2">
         <Link
           to="/"
           className="mr-1 flex shrink-0 items-center no-underline sm:mr-3.5"
@@ -139,46 +152,34 @@ export function Header() {
 
         {/* ---------- desktop navigation ---------- */}
         <div className="hidden h-[60px] items-center lg:flex">
+          {/*
+            One flat set of top-level links, exactly the list the visitor sees:
+            the two PDF tools people reach for daily, the two image tools they
+            reach for daily, then the two mega-menus that hold everything else.
+            Anything shorter made the bar feel arbitrary; anything longer
+            overflowed at 1440px.
+          */}
           <ul className="m-0 flex h-full list-none items-center p-0">
-            {NAV_PRIMARY.map(({ slug, label }) => (
-              <li key={slug} className="flex h-full items-center">
-                <Link
-                  to={`/${slug}`}
-                  className={`flex h-[60px] items-center px-3 text-[14px] font-medium uppercase no-underline hover:text-brand ${
-                    activeSlug === slug ? 'text-brand' : 'text-ink'
-                  }`}
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
+            {TOP_LINKS.map(({ slug, label }) => {
+              const imageLink = slug.endsWith('-image');
+              return (
+                <li key={slug} className="flex h-full items-center">
+                  <Link
+                    to={`/${slug}`}
+                    className={`flex h-[60px] items-center px-2.5 text-[13.5px] font-medium uppercase whitespace-nowrap no-underline ${
+                      imageLink ? 'hover:text-img' : 'hover:text-brand'
+                    } ${activeSlug === slug ? (imageLink ? 'text-img' : 'text-brand') : 'text-ink'}`}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
 
             <li className="relative flex h-full items-center">
               <button
                 type="button"
-                className={trigger}
-                aria-expanded={open === 'convert'}
-                onClick={() => toggle('convert')}
-              >
-                Convert PDF
-                <img src={ICONS.chevronDown} alt="" aria-hidden="true" className="h-4 w-4 opacity-60" />
-              </button>
-              {open === 'convert' && (
-                <div className="absolute top-[58px] left-1/2 z-50 w-[520px] -translate-x-1/2 rounded-2xl bg-surface p-5 shadow-[0_12px_40px_rgba(0,0,0,0.16)]">
-                  <div className="grid grid-cols-2 gap-x-5 gap-y-1">
-                    <MenuColumn title="Convert to PDF" slugs={CONVERT_TO} onNavigate={() => setOpen(null)} />
-                    <MenuColumn title="Convert from PDF" slugs={CONVERT_FROM} onNavigate={() => setOpen(null)} />
-                  </div>
-                </div>
-              )}
-            </li>
-          </ul>
-
-          <ul className="m-0 ml-1 flex h-full list-none items-center p-0">
-            <li className="relative flex h-full items-center">
-              <button
-                type="button"
-                className={trigger}
+                className={`${trigger} whitespace-nowrap`}
                 aria-expanded={open === 'all'}
                 onClick={() => toggle('all')}
               >
@@ -188,7 +189,28 @@ export function Header() {
               {open === 'all' && (
                 <div className="fixed inset-x-0 top-[60px] z-50 mx-auto w-full max-w-[1180px] rounded-2xl bg-surface p-6 shadow-[0_12px_40px_rgba(0,0,0,0.16)]">
                   <div className="grid grid-cols-3 gap-x-5 gap-y-4 xl:grid-cols-6">
-                    {NAV_GROUPS.map((g) => (
+                    {ALL_NAV_GROUPS.filter((g) => !g.title.startsWith('Optimize IMAGE') && !g.title.startsWith('Edit IMAGE') && !g.title.startsWith('Convert IMAGE') && !g.title.startsWith('Create IMAGE')).map((g) => (
+                      <MenuColumn key={g.title} title={g.title} slugs={g.tools} onNavigate={() => setOpen(null)} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </li>
+
+            <li className="relative flex h-full items-center">
+              <button
+                type="button"
+                className={`${trigger} whitespace-nowrap hover:text-img`}
+                aria-expanded={open === 'image'}
+                onClick={() => toggle('image')}
+              >
+                Image tools
+                <img src={ICONS.chevronDown} alt="" aria-hidden="true" className="h-4 w-4 opacity-60" />
+              </button>
+              {open === 'image' && (
+                <div className="absolute top-[58px] right-0 z-50 w-[560px] rounded-2xl bg-surface p-5 shadow-[0_12px_40px_rgba(0,0,0,0.16)]">
+                  <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+                    {IMAGE_NAV_GROUPS.map((g) => (
                       <MenuColumn key={g.title} title={g.title} slugs={g.tools} onNavigate={() => setOpen(null)} />
                     ))}
                   </div>
@@ -196,9 +218,10 @@ export function Header() {
               )}
             </li>
           </ul>
+
         </div>
 
-        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           {install.available && (
             <button
               type="button"
@@ -333,7 +356,7 @@ export function Header() {
               Main tools
             </div>
             <ul className="m-0 list-none p-0">
-              {NAV_PRIMARY.map(({ slug, label }) => (
+              {TOP_LINKS.map(({ slug, label }) => (
                 <li key={slug}>
                   <Link
                     to={`/${slug}`}
@@ -348,14 +371,14 @@ export function Header() {
             </ul>
           </div>
 
-          {NAV_GROUPS.map((g) => (
+          {ALL_NAV_GROUPS.map((g) => (
             <div key={g.title} className="mb-5">
               <div className="mb-2 text-[11.5px] font-semibold tracking-[0.04em] text-muted uppercase">
                 {g.title}
               </div>
               <ul className="m-0 list-none p-0">
-                {g.tools.map((s) => {
-                  const tool = TOOL_BY_SLUG[s];
+                {visibleSlugs(g.tools).map((s) => {
+                  const tool = TOOL_BY_SLUG[s] ?? IMAGE_TOOL_BY_SLUG[s];
                   if (!tool) return null;
                   return (
                     <li key={s}>

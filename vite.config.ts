@@ -31,5 +31,17 @@ export default defineConfig(({ mode }) => ({
     },
   },
   worker: { format: 'es' },
-  server: { port: 5173 },
+  server: {
+    port: 5173,
+    watch: {
+      /*
+       * The editor that writes this repo's files leaves short-lived temp
+       * directories behind (".NAME.<pid>.<uuid>.tmpdir"), and watching one of
+       * them throws EBUSY on Windows, which kills the whole dev server. Nothing
+       * under these paths is ever served, so ignoring them is both safe and
+       * what keeps a long editing session alive.
+       */
+      ignored: ['**/*.tmpdir/**', '**/.*.tmp', '**/_ref/**', '**/_gen/**', '**/dist/**'],
+    },
+  },
 }));

@@ -9,10 +9,21 @@
  * rather than being approximated.
  */
 @theme {
-  /* Brand */
+  /* Brand — the PDF family keeps iLovePDF's red. */
   --color-brand: #e5322d;
   --color-brand-dark: #bd060a;
   --color-brand-soft: #fde8e7;
+
+  /*
+   * Image family accent. iLoveIMG's CTA is a flat blue (rgb(77 144 254)),
+   * deliberately different from the PDF red so the two halves of the app read
+   * as siblings rather than one product pretending to be two.
+   */
+  --color-img: #4d90fe;
+  --color-img-dark: #2f7bf0;
+  --color-img-soft: #e8f0ff;
+  /* The tool tab strip under a panel title. */
+  --color-img-tab: #4d90fe;
 
   /* Ink scale */
   --color-ink: #161616;
@@ -47,6 +58,7 @@
   --shadow-tile: 0 2px 2px 0 rgb(0 0 0 / 0.1);
   --shadow-chip: 0 1px 2px 0 rgb(0 0 0 / 0.6);
   --shadow-cta: 0 2px 8px 0 rgb(50 50 50 / 0.3);
+  --shadow-img-cta: 0 2px 8px 0 rgb(50 50 50 / 0.3);
 
   /* Type */
   --font-sans: Graphik, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
@@ -77,6 +89,17 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+  }
+
+  /*
+   * The app owns the viewport: <main> is the only scroll container, so a page
+   * can never end up with a body scrollbar and an inner one fighting over the
+   * wheel. Anything that needs to scroll does it inside the shell.
+   */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
   }
 
   body {
@@ -119,8 +142,10 @@
     @apply flex flex-col bg-surface;
     border-left: 1px solid rgb(0 0 0 / 0.2);
     /* Clear the fixed process button so the last control is never trapped
-       behind it. */
-    padding-bottom: 110px;
+       behind it. The button is 64px tall and sits 24px from the bottom edge,
+       so 110px leaves a comfortable gap even when a panel ends in a radio
+       card whose description wraps. */
+    padding-bottom: 150px;
     overflow-x: hidden;
     overflow-y: auto;
     position: relative;

@@ -170,10 +170,20 @@ export function FileCard({
           style={{ transform: entry.rotation ? `rotate(${entry.rotation}deg)` : undefined }}
         >
           {entry.thumb ? (
+            /*
+             * The thumbnail is inert on purpose. Left draggable it starts a
+             * NATIVE image drag, which publishes "Files" in dataTransfer - the
+             * exact signature the global DropZone listens for - so dragging a
+             * card flashed "Drop it like it is hot" and on release tried to
+             * re-upload the preview. The card itself is the drag handle; the
+             * cover must not be a second, competing one.
+             */
             <img
               src={entry.thumb}
               alt=""
-              className="max-h-[178px] max-w-[150px] bg-white shadow-[0_0_5px_2px_rgba(0,0,0,0.1)]"
+              draggable={false}
+              onDragStart={(event) => event.preventDefault()}
+              className="pointer-events-none max-h-[178px] max-w-[150px] bg-white shadow-[0_0_5px_2px_rgba(0,0,0,0.1)]"
             />
           ) : (
             <div
@@ -191,8 +201,14 @@ export function FileCard({
         <span className="file-name text-body" title={entry.name}>
           {entry.name}
         </span>
+        {/* Image files also carry their pixel size, matching the reference's
+            "1600 x 1200" line under the name. */}
+        {entry.width && entry.height ? (
+          <span className="file-name -mt-1 block text-muted">
+            {entry.width} x {entry.height}
+          </span>
+        ) : null}
       </div>
     </div>
   );
 }
-

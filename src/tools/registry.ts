@@ -52,6 +52,21 @@ const REGISTRY: Record<string, Loader> = {
   'powerpoint-to-pdf': pick('slides.tsx', 'powerpointToPdfTool'),
   'pdf-to-powerpoint': pick('slides.tsx', 'pdfToPowerpointTool'),
   'convert-pdf-to-pdfa': pick('slides.tsx', 'pdfToPdfATool'),
+
+  /* ---------------- image family (iLoveIMG parity) ---------------- */
+  'compress-image': pick('imgOptimize.tsx', 'compressImageTool'),
+  'resize-image': pick('imgOptimize.tsx', 'resizeImageTool'),
+  'upscale-image': pick('imgOptimize.tsx', 'upscaleImageTool'),
+  'crop-image': pick('imgEdit.tsx', 'cropImageTool'),
+  'rotate-image': pick('imgEdit.tsx', 'rotateImageTool'),
+  'watermark-image': pick('imgWatermark.tsx', 'watermarkImageTool'),
+  'blur-face': pick('imgWatermark.tsx', 'blurFaceTool'),
+  'remove-background': pick('imgWatermark.tsx', 'removeBgTool'),
+  'meme-generator': pick('imgCreate.tsx', 'memeTool'),
+  'photo-editor': pick('imgPhoneEditor.tsx', 'photoEditorTool'),
+  'convert-to-jpg': pick('imgConvert.tsx', 'toJpgTool'),
+  'jpg-to-image': pick('imgConvert.tsx', 'fromJpgTool'),
+  'html-to-image': pick('imgConvert.tsx', 'htmlToImageTool'),
 };
 
 /** Load a tool's implementation. Resolves to null when the slug is unknown. */

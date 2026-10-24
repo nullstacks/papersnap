@@ -23,14 +23,24 @@ would 404 on refresh and on shared deep links. Every route lives under `#/`
 (`/#/merge-pdf`), which always resolves to `index.html`. A copy of
 `index.html` is also published as `404.html` so stray paths still boot the app.
 
-## Tools (23)
+## Tools (36)
 
-**Organize** — Merge, Split, Remove pages, Extract pages
-**Optimize** — Compress, Repair
-**Convert to PDF** — JPG, Word, PowerPoint, Excel, HTML
-**Convert from PDF** — JPG, Word, PowerPoint, Excel, PDF/A
-**Edit** — Rotate, Page numbers, Watermark, Crop
-**Security** — Unlock, Protect (AES-256), Sign
+Two families share one shell. The PDF half follows iLovePDF's layout and
+wording; the image half follows iLoveIMG's, down to its blue CTA — which is why
+`--color-brand` (red) and `--color-img` (blue) exist as separate tokens.
+
+**PDF — Organize** — Merge, Split, Remove pages, Extract pages
+**PDF — Optimize** — Compress, Repair
+**PDF — Convert to PDF** — JPG, Word, PowerPoint, Excel, HTML
+**PDF — Convert from PDF** — JPG, Word, PowerPoint, Excel, PDF/A
+**PDF — Edit** — Rotate, Page numbers, Watermark, Crop
+**PDF — Security** — Unlock, Protect (AES-256), Sign
+
+**IMAGE — Optimize** — Compress, Resize, Upscale
+**IMAGE — Edit** — Crop, Rotate, Photo editor, Watermark, Blur face,
+Remove background
+**IMAGE — Convert** — Convert to JPG, Convert from JPG, HTML to image
+**IMAGE — Create** — Meme generator
 
 ## Features
 
@@ -45,6 +55,39 @@ would 404 on refresh and on shared deep links. Every route lives under `#/`
 - **Installable app** with an offline service worker.
 - **Fully responsive** — a 300px options column on desktop, a slide-up settings
   sheet on phones.
+- **Two accent identities.** PDF tools use the iLovePDF red (`--color-brand`);
+  image tools use the iLoveIMG blue (`--color-img`). `isImageTool(slug)` in
+  `src/lib/accent.ts` is the only place that decision is made, and the shell
+  threads it through the uploader, the CTA, the drop outline and the result page.
+- **A real image engine.** `src/lib/image.ts` decodes and re-encodes through
+  `<canvas>` only: progressive halving for clean downscales, a hand-written
+  24-bit BMP encoder, a flood-fill background remover, and a text/logo watermark
+  renderer. No image dependency is installed for this.
+
+## Image tools (iLoveIMG parity)
+
+The image half mirrors iloveimg.com's tool set, its panel wording and its
+layout, rebuilt to run locally:
+
+| Tool | What it does locally |
+| --- | --- |
+| Compress IMAGE | Re-encode at three levels; refuses to return a bigger file |
+| Resize IMAGE | Pixels or percentage, ratio lock, no-enlarge guard |
+| Upscale | 2x/4x progressive resample plus a sharpen pass |
+| Crop IMAGE | Draggable 8-handle box, aspect presets, flip, rotate |
+| Rotate IMAGE | Per-file right/left queue with flips, matching the card control |
+| Photo editor | Tabbed editor: filters, resize, crop, transform, draw, text, shapes, frame, background |
+| Watermark IMAGE | Text or logo, position, opacity, angle, tiled mode |
+| Blur face | Optional skin-tone detection plus a hand-drawn region editor |
+| Remove background | Edge-colour flood fill, transparent or flat colour |
+| Convert to JPG | Quality presets, transparency flattened onto white |
+| Convert from JPG | PNG or GIF output with static/animated choice |
+| HTML to image | Renders pasted markup off-screen and rasterises it |
+| Meme generator | Top/bottom or in-picture captions, draggable layers |
+
+Where a reference feature fundamentally needs a server — face detection models,
+fetching another site's page, server-side SVG rendering — the tool says so in
+its own panel rather than faking the result.
 
 ## Brand
 

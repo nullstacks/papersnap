@@ -5,7 +5,16 @@
  * Keeping these in one place lets the router, sidebar and engine stay decoupled.
  */
 
-export type ToolCategory = 'organize' | 'optimize' | 'convert' | 'edit' | 'security';
+export type ToolCategory =
+  | 'organize'
+  | 'optimize'
+  | 'convert'
+  | 'edit'
+  | 'security'
+  | 'image-optimize'
+  | 'image-edit'
+  | 'image-convert'
+  | 'image-create';
 
 /** A file the visitor added, plus everything the UI derived from it. */
 export interface WorkFile {
@@ -18,6 +27,10 @@ export interface WorkFile {
   rotation: number;
   /** Page count, once the bytes have been parsed. */
   pages: number | null;
+  /** Pixel width, for image inputs (the reference shows "1600 x 1200"). */
+  width?: number;
+  /** Pixel height, for image inputs. */
+  height?: number;
   /** Cached bytes so tools do not re-read the File on every run. */
   bytes?: Uint8Array;
   /** Rendered first-page cover, as a data URL. */
@@ -48,6 +61,12 @@ export interface ToolDef {
   category: ToolCategory;
   group: string;
   title: string;
+  /**
+   * Heading for the options column, when the reference words it differently
+   * from the tool's own name ("Resize IMAGE" in the nav, "Resize options" in
+   * the sidebar). Falls back to `title`.
+   */
+  panelTitle?: string;
   /** Page heading. */
   h1: string;
   /** Page sub-heading. */
@@ -64,6 +83,15 @@ export interface ToolDef {
   icon: string;
   acceptLabel?: string;
   dropLabel?: string;
+  /**
+   * Keep the tool routable but out of every navigation surface.
+   *
+   * The conversions that can only recover text are marked this way: the route
+   * still works for anyone holding an old link, but the home grid, the menus,
+   * the footer and the "continue to" strip do not advertise a tool whose output
+   * would disappoint.
+   */
+  hidden?: boolean;
 }
 
 /** Values a tool reads back out of its sidebar panel. */

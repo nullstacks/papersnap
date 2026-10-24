@@ -6,6 +6,7 @@
  * Behaviour lives in src/tools/<slug>.ts and is registered separately.
  */
 import type { ToolDef } from '../types';
+import { IMAGE_FILTERS, IMAGE_NAV_GROUPS, IMAGE_TOOLS, visible } from './imageTools';
 
 export const TOOLS: ToolDef[] = [
   {
@@ -178,6 +179,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     slug: "pdf-to-word",
+    /* Text-only extraction: see ToolDef.hidden. */
+    hidden: true,
     category: "convert",
     group: "Convert from PDF",
     title: "PDF to Word",
@@ -192,6 +195,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     slug: "pdf-to-powerpoint",
+    /* Text-only extraction: see ToolDef.hidden. */
+    hidden: true,
     category: "convert",
     group: "Convert from PDF",
     title: "PDF to POWERPOINT",
@@ -206,6 +211,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     slug: "pdf-to-excel",
+    /* Text-only extraction: see ToolDef.hidden. */
+    hidden: true,
     category: "convert",
     group: "Convert from PDF",
     title: "PDF to Excel",
@@ -220,6 +227,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     slug: "convert-pdf-to-pdfa",
+    /* Text-only extraction: see ToolDef.hidden. */
+    hidden: true,
     category: "convert",
     group: "Convert from PDF",
     title: "PDF to PDF/A",
@@ -364,3 +373,27 @@ export const HOME_FILTERS: Array<{ id: string; label: string }> = [
   { id: "edit", label: "Edit PDF" },
   { id: "security", label: "PDF Security" },
 ];
+
+/* ------------------------------------------------------------------ unions */
+
+/**
+ * Every advertised tool: the PDF family first, then the image family.
+ *
+ * Tools flagged hidden in the catalogue are filtered out here, which is what
+ * keeps them out of the home grid, the mega-menu, the footer and the routing
+ * table in one move. Their routes still exist for old links.
+ */
+export const ALL_TOOLS: ToolDef[] = visible([...TOOLS, ...IMAGE_TOOLS]);
+
+export const ALL_TOOL_BY_SLUG: Record<string, ToolDef> = Object.fromEntries(
+  [...TOOLS, ...IMAGE_TOOLS].map((t) => [t.slug, t]),
+);
+
+/** Both nav groupings, PDF first, each with its hidden entries dropped. */
+export const ALL_NAV_GROUPS: NavGroup[] = [...NAV_GROUPS, ...IMAGE_NAV_GROUPS].map((group) => ({
+  ...group,
+  tools: visible(group.tools.map((slug) => ALL_TOOL_BY_SLUG[slug]).filter(Boolean)).map((t) => t.slug),
+}));
+
+/** Filter chips: the PDF categories plus the image ones. */
+export const ALL_FILTERS: Array<{ id: string; label: string }> = [...HOME_FILTERS, ...IMAGE_FILTERS];

@@ -4,14 +4,52 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#ffffff" />
-    <title>PaperSnap — every PDF tool, running in your browser</title>
+    <title>PaperSnap — every PDF and image tool, running in your browser</title>
     <meta
       name="description"
-      content="Merge, split, compress, convert, rotate, unlock and watermark PDFs entirely in your browser. No uploads, no accounts, no server."
+      content="Merge, split, compress, convert and protect PDFs; crop, resize, retouch and convert images. Everything runs entirely in your browser: no uploads, no accounts, no server."
     />
     <!-- Vite rewrites these absolute paths with the configured base, so they
          resolve correctly on a GitHub Pages project site (/<repo>/). -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicons-pdf/favicon-32x32.png" />
+    <!--
+      Two favicon variants, chosen by the browser rather than by us.
+
+      The mark is black ink plus a red heart. On a dark tab strip the black
+      document outline disappears, so the dark-scheme files re-emit those strokes
+      in white; on a light strip the original ink is correct. Both are
+      transparent, so they sit on the tab's own background instead of a white
+      box. media="(prefers-color-scheme: ...)" is the supported way to hand the
+      choice to the browser.
+    -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/img/favicons-pdf/favicon-32x32.png"
+      media="(prefers-color-scheme: light)"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/img/favicons-pdf/favicon-32x32-dark.png"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/img/favicons-pdf/favicon-16x16.png"
+      media="(prefers-color-scheme: light)"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/img/favicons-pdf/favicon-16x16-dark.png"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="icon" type="image/png" sizes="48x48" href="/img/favicons-pdf/favicon-48x48.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
     <!-- Installable app: the manifest plus the service worker registered in
          main.tsx let the browser offer "Install app". -->
@@ -20,6 +58,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="PaperSnap" />
+    <meta property="og:title" content="PaperSnap — every PDF and image tool, running in your browser" />
+    <meta
+      property="og:description"
+      content="Merge, split, compress, convert and protect PDFs; crop, resize, retouch and convert images. Nothing is uploaded."
+    />
+    <meta name="twitter:card" content="summary" />
     <script>
       /* Apply the saved theme before first paint so there is no flash. */
       (function () {

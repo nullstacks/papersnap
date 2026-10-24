@@ -18,20 +18,39 @@ interface Props {
   accept: string;
   multiple: boolean;
   onFiles: (files: File[]) => void;
+  /** 'image' swaps the red picker for iLoveIMG's blue one. */
+  family?: 'pdf' | 'image';
 }
 
-export function Uploader({ compact, count, label, title, dropLabel, accept, multiple, onFiles }: Props) {
+export function Uploader({
+  compact,
+  count,
+  label,
+  title,
+  dropLabel,
+  accept,
+  multiple,
+  onFiles,
+  family = 'pdf',
+}: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const solid = family === 'image' ? 'bg-img hover:bg-img-dark' : 'bg-brand hover:bg-brand-dark';
 
   const pick = () => inputRef.current?.click();
 
   return (
     <>
+      {/*
+       * The input is visually hidden and driven by the button below, so it needs
+       * its own accessible name — axe reports an unlabelled file input as
+       * critical otherwise, and a screen reader would announce "button" twice.
+       */}
       <input
         ref={inputRef}
         type="file"
         id="fileInput"
         className="sr-only"
+        aria-label={title}
         multiple={multiple}
         accept={accept}
         onChange={(e) => {
@@ -62,7 +81,7 @@ export function Uploader({ compact, count, label, title, dropLabel, accept, mult
             onClick={pick}
             title={title}
             aria-label={`${title} (${count} selected)`}
-            className="group relative flex h-[42px] w-[42px] items-center justify-center rounded-full border-0 bg-brand shadow-btn hover:bg-brand-dark"
+            className={`group relative flex h-[42px] w-[42px] items-center justify-center rounded-full border-0 shadow-btn ${solid}`}
           >
             <img src={ICONS.plus} alt="" aria-hidden="true" className="h-5 w-5" />
             <span className="pointer-events-none absolute top-1/2 right-[calc(100%+10px)] -translate-y-1/2 rounded bg-body px-2.5 py-2 text-[13px] leading-none font-medium whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
@@ -75,7 +94,7 @@ export function Uploader({ compact, count, label, title, dropLabel, accept, mult
           <button
             type="button"
             onClick={pick}
-            className="inline-flex max-w-[60vw] items-center justify-center rounded-xl border-0 bg-brand px-12 py-6 text-[24px] leading-7 font-medium text-white shadow-btn transition-colors hover:bg-brand-dark"
+            className={`inline-flex max-w-[60vw] items-center justify-center rounded-xl border-0 px-12 py-6 text-[24px] leading-7 font-medium text-white shadow-btn transition-colors ${solid}`}
             style={{ minHeight: 80, minWidth: 330 }}
           >
             {label}

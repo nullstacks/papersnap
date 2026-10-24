@@ -7,7 +7,7 @@
  * appears bottom-right. After a run, the download screen replaces the workspace.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TOOL_BY_SLUG } from '@/content/tools';
+import { ALL_TOOL_BY_SLUG as TOOL_BY_SLUG } from '@/content/tools';
 import { loadImplementation } from '@/tools/registry';
 import { downloadBlob, prettySize } from '@/lib/pdf';
 import type { FieldValues, ResultFile, ToolImpl, WorkFile } from '@/types';
@@ -21,9 +21,24 @@ import { ResultPage } from './ResultPage';
 import { PreviewDialog } from './PreviewDialog';
 import { describeFile, fileAccepted, reorder } from './fileUtils';
 import { SortIcon } from './Icons';
+import { isImageTool } from '@/lib/accent';
+import { Footer } from './Footer';
 
 export function ToolPage({ slug }: { slug: string }) {
   const tool = TOOL_BY_SLUG[slug];
+
+  /*
+   * Keep the browser tab in step with the page. Without this every tool shared
+   * the landing page's title, which made a tab strip full of tools read as one
+   * long duplicated entry.
+   */
+  useEffect(() => {
+    const previous = document.title;
+    if (tool) document.title = `${tool.title} — PaperSnap`;
+    return () => {
+      document.title = previous;
+    };
+  }, [tool]);
 
   const [impl, setImpl] = useState<ToolImpl | null>(null);
   const [files, setFiles] = useState<WorkFile[]>([]);
@@ -128,7 +143,9 @@ export function ToolPage({ slug }: { slug: string }) {
    */
   const ready = useMemo(() => {
     if (!impl) return false;
-    if (files.length < Math.max(1, tool?.min ?? 1)) return false;
+    /* Form-driven tools have no files at all, so the count gate cannot apply to
+       them — their own isReady is the whole readiness test. */
+    if (tool?.accept && files.length < Math.max(1, tool.min ?? 1)) return false;
     if (impl.isReady) return impl.isReady({ files, values });
     return true;
   }, [impl, tool, files, values, tick]);
@@ -165,6 +182,22 @@ export function ToolPage({ slug }: { slug: string }) {
     }
   };
 
+  /*
+   * Start over returns the page to its pristine state: no files, no options, no
+   * results. Re-uploading is the point - a visitor who is done with a batch
+   * should not have to remove each card by hand.
+   */
+  const startOver = () => {
+    setResults(null);
+    setFiles([]);
+    setValues({});
+    setError(null);
+    setPreview(null);
+    setPercent(0);
+    setStage('Working...');
+    seq.current = 0;
+  };
+
   const downloadAll = () => {
     if (!results?.length) return;
     if (results.length === 1) {
@@ -185,6 +218,14 @@ export function ToolPage({ slug }: { slug: string }) {
 
   const hasFiles = files.length > 0;
   const inputBytes = files.reduce((sum, f) => sum + f.size, 0);
+  const family: 'pdf' | 'image' = isImageTool(slug) ? 'image' : 'pdf';
+  /*
+   * Form-driven tools (HTML to PDF, HTML to image) take their input as markup or
+   * a URL rather than as dropped files. Their panel is rendered in the work area
+   * at a readable width instead of the narrow sidebar, but they still need the
+   * CTA, so this flag joins the file count in that one condition.
+   */
+  const formDriven = !tool.accept;
 
   /* ---------- result screen ---------- */
   if (results && results.length) {
@@ -192,13 +233,16 @@ export function ToolPage({ slug }: { slug: string }) {
       <div className="h-[calc(100vh-60px)] overflow-y-auto bg-canvas">
         <ResultPage
           slug={slug}
+          family={family}
           results={results}
           inputBytes={inputBytes}
           onDownloadOne={(r) => downloadBlob(r.blob, r.name)}
           onDownloadAll={downloadAll}
           onBack={() => setResults(null)}
+          onStartOver={startOver}
           onPreview={setPreview}
         />
+        <Footer />
         {preview && <PreviewDialog result={preview} onClose={() => setPreview(null)} />}
       </div>
     );
@@ -211,7 +255,11 @@ export function ToolPage({ slug }: { slug: string }) {
       {/* ------------------------------------------------------- work area */}
       <div
         className={`relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-canvas text-center transition-colors ${
-          over ? 'outline-3 -outline-offset-[14px] outline-dashed outline-brand' : ''
+          over
+            ? family === 'image'
+              ? 'outline-3 -outline-offset-[14px] outline-dashed outline-img'
+              : 'outline-3 -outline-offset-[14px] outline-dashed outline-brand'
+            : ''
         }`}
         onDragOver={(e) => {
           e.preventDefault();
@@ -256,6 +304,7 @@ export function ToolPage({ slug }: { slug: string }) {
               dropLabel={tool.accept === 'image/*' ? 'or drop images here' : 'or drop files here'}
               accept={tool.accept}
               multiple={tool.multiple}
+              family={family}
               onFiles={addFiles}
             />
           )}
@@ -264,7 +313,26 @@ export function ToolPage({ slug }: { slug: string }) {
               Desktop: floats to the right of the sidebar as on the reference.
               Mobile: an inline row above the cards, with the settings gear
               first — matching the reference's own phone layout. */}
-          {hasFiles && (
+          {/*
+            Work-area tools (crop, the photo editor, blur) fill the canvas, so the
+            file rail is suppressed there — but a phone still needs a way into the
+            settings sheet, which is what this one button is for.
+          */}
+          {hasFiles && impl?.Workarea && (
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              title="Options"
+              aria-label="Open settings"
+              className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border-0 bg-surface text-ink shadow-btn hover:bg-canvas lg:hidden"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M24 14.187V9.813c-2.148-.766-2.726-.802-3.027-1.53s.083-1.17 1.06-3.223L18.94 1.968c-2.026.963-2.488 1.364-3.224 1.06-.727-.302-.768-.89-1.527-3.027H9.813c-.764 2.144-.8 2.725-1.53 3.027-.752.313-1.203-.1-3.223-1.06L1.968 5.06c.977 2.055 1.362 2.493 1.06 3.224S2.146 9.05 0 9.813v4.375c2.14.76 2.725.8 3.027 1.528.304.734-.08 1.167-1.06 3.223l3.093 3.093c2-.95 2.47-1.373 3.223-1.06.728.302.764.88 1.53 3.027h4.374c.758-2.13.8-2.723 1.537-3.03.745-.308 1.186.1 3.215 1.062l3.093-3.093c-.975-2.05-1.362-2.492-1.06-3.223.3-.726.88-.763 3.027-1.528zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" />
+              </svg>
+            </button>
+          )}
+
+          {hasFiles && !impl?.Workarea && (
             <div className="mb-3 flex items-center justify-center gap-2 lg:fixed lg:top-[120px] lg:right-[324px] lg:z-20 lg:mb-0 lg:flex-col">
               {/* Settings gear: mobile only, since the sidebar becomes a sheet. */}
               <button
@@ -286,6 +354,7 @@ export function ToolPage({ slug }: { slug: string }) {
                 dropLabel=""
                 accept={tool.accept}
                 multiple={tool.multiple}
+                family={family}
                 onFiles={addFiles}
               />
               {files.length > 1 && (
@@ -373,7 +442,13 @@ export function ToolPage({ slug }: { slug: string }) {
 
           {hasFiles && files.length === 1 && !impl?.Workarea && (
             <div className="mt-2 text-sm text-muted">
-              {files[0].pages ? `${files[0].pages} page${files[0].pages === 1 ? '' : 's'} · ` : ''}
+              {/* Image tools describe the picture by its pixels; PDF tools by
+                  its page count. Both then show the file size. */}
+              {files[0].width && files[0].height
+                ? `${files[0].width} x ${files[0].height} · `
+                : files[0].pages
+                  ? `${files[0].pages} page${files[0].pages === 1 ? '' : 's'} · `
+                  : ''}
               {prettySize(files[0].size)}
             </div>
           )}
@@ -407,7 +482,7 @@ export function ToolPage({ slug }: { slug: string }) {
           >
             <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-black/20 bg-surface py-3 lg:justify-center">
               <h2 className="px-4 text-[18px] leading-[26px] font-semibold text-ink-2 lg:px-0 lg:text-[22px] lg:leading-[30px]">
-                {tool.title}
+                {tool.panelTitle ?? tool.title}
               </h2>
               <button
                 type="button"
@@ -440,13 +515,19 @@ export function ToolPage({ slug }: { slug: string }) {
         </>
       )}
 
-      {hasFiles && (
+      {(hasFiles || formDriven) && (
         <ProcessButton
           label={tool.action}
           disabled={!ready}
           busy={busy}
           onClick={run}
+          /*
+           * 252px, not the reference's 330: its options column is 380px wide and
+           * ours is 300px, so a 330px CTA hung past the sidebar edge and looked
+           * like a layout bug.
+           */
           width={252}
+          family={family}
         />
       )}
 

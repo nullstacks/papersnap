@@ -303,7 +303,15 @@
     cursor: grabbing;
   }
 
-  /* Reveal the per-file actions on hover, as the reference does. */
+  /*
+   * Reveal the per-file actions on hover, as the reference does — but only where
+   * a hover exists.
+   *
+   * On a touch screen there is no hover and no focus on tap, so the buttons
+   * stayed invisible while remaining hit-testable: a stray tap near the top of a
+   * thumbnail silently removed the file. Invisible destructive controls are not
+   * worth the tidier card, so on coarse pointers they are simply always shown.
+   */
   .file-card .file-actions {
     opacity: 0;
     transition: opacity 0.12s linear;
@@ -312,6 +320,12 @@
   .file-card:hover .file-actions,
   .file-card:focus-within .file-actions {
     opacity: 1;
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    .file-card .file-actions {
+      opacity: 1;
+    }
   }
 
   .file-name {

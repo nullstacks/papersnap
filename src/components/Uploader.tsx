@@ -94,8 +94,14 @@ export function Uploader({
           <button
             type="button"
             onClick={pick}
-            className={`inline-flex max-w-[60vw] items-center justify-center rounded-xl border-0 px-12 py-6 text-[24px] leading-7 font-medium text-white shadow-btn transition-colors ${solid}`}
-            style={{ minHeight: 80, minWidth: 330 }}
+            /*
+             * Sized by the viewport, not by a fixed minimum. A 330px floor is
+             * wider than a 320px phone, so the button hung off both edges;
+             * `max-w-[60vw]` could never rescue it because the intrinsic minimum
+             * wins. The height still matches the reference's generous target.
+             */
+            className={`inline-flex w-[min(330px,86vw)] items-center justify-center rounded-xl border-0 px-6 py-6 text-[22px] leading-7 font-medium text-white shadow-btn transition-colors sm:px-12 sm:text-[24px] ${solid}`}
+            style={{ minHeight: 80 }}
           >
             {label}
           </button>

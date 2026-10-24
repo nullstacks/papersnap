@@ -248,7 +248,14 @@ export function ToolPage({ slug }: { slug: string }) {
   /* ---------- result screen ---------- */
   if (results && results.length) {
     return (
-      <div className="h-[calc(100vh-60px)] overflow-y-auto bg-canvas">
+      /*
+       * Keyed on the result set so React mounts a fresh scroll container. The
+       * work area and this screen are different subtrees, but both scroll; on a
+       * phone the browser could carry the previous scrollTop across, leaving the
+       * download button above the fold at y = -129. A new key makes the element
+       * genuinely new, which resets it.
+       */
+      <div key={results[0]?.name} className="h-[calc(100vh-60px)] overflow-y-auto bg-canvas">
         <ResultPage
           slug={slug}
           family={family}
@@ -501,7 +508,7 @@ export function ToolPage({ slug }: { slug: string }) {
             />
           )}
           <aside
-            className={`tool-sidebar max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[78vh] max-lg:shrink-0 max-lg:rounded-t-2xl max-lg:border-t max-lg:border-l-0 max-lg:border-line max-lg:shadow-[0_-8px_30px_rgba(0,0,0,0.22)] max-lg:transition-transform max-lg:duration-200 ${
+            className={`tool-sidebar max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[78vh] max-lg:shrink-0 max-lg:pb-20 max-lg:rounded-t-2xl max-lg:border-t max-lg:border-l-0 max-lg:border-line max-lg:shadow-[0_-8px_30px_rgba(0,0,0,0.22)] max-lg:transition-transform max-lg:duration-200 ${
               sheetOpen ? 'max-lg:translate-y-0' : 'max-lg:translate-y-full'
             }`}
             data-testid="sidebar"
@@ -542,6 +549,14 @@ export function ToolPage({ slug }: { slug: string }) {
         </>
       )}
 
+      {/*
+        * The settings sheet sits at z-50 and covers the whole lower screen, so a
+        * z-30 CTA underneath it is both invisible and unclickable — the action
+        * disappeared exactly while the visitor was choosing options. The button
+        * therefore renders above the sheet on phones (matching the reference,
+        * where the CTA stays pinned over the panel) and below it from lg up,
+        * where the sheet does not exist.
+        */}
       {(hasFiles || formDriven) && (
         <ProcessButton
           label={tool.action}

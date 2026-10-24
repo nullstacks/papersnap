@@ -237,6 +237,18 @@ function WatermarkPanel({ values, setValue }: PanelProps) {
       <Info>Watermark will be applied to this images</Info>
 
       {/*
+       * Say what the disabled CTA is waiting for. The button is the only thing
+       * the visitor can see outside the sheet on a phone, so a dead-looking
+       * action with no explanation reads as a bug.
+       */}
+      {mode === 'text' && !str(values, 'wmText').trim() ? (
+        <Note>Type the watermark text below to enable the button.</Note>
+      ) : null}
+      {mode === 'image' && !logoName ? (
+        <Note>Choose a logo image below to enable the button.</Note>
+      ) : null}
+
+      {/*
        * The reference offers the two kinds of mark before anything else, so the
        * mode is a pair of buttons rather than a setting buried in the fields.
        */}
@@ -345,6 +357,18 @@ function WatermarkPanel({ values, setValue }: PanelProps) {
 
 export const watermarkImageTool: ToolImpl = {
   Panel: WatermarkPanel,
+
+  /*
+   * A watermark needs something to stamp. Without this the CTA stayed enabled,
+   * did nothing, and printed its complaint inside the closed settings sheet —
+   * which on a phone looks like a broken button.
+   */
+  isReady: ({ files, values }) => {
+    if (!files.length) return false;
+    const mode = str(values, 'wmMode', 'text') === 'image' ? 'image' : 'text';
+    if (mode === 'image') return Boolean(str(values, 'wmLogo'));
+    return shown(values, 'wmText', '').trim().length > 0;
+  },
 
   async run({ files, values, setProgress, setStatus }) {
     const mode = str(values, 'wmMode', 'text') === 'image' ? 'image' : 'text';
@@ -748,6 +772,11 @@ function BlurPanel({ files, values, setValue }: PanelProps) {
         anything it missed.
       </Info>
 
+      {/* The CTA is disabled until an area exists; say so where it is read. */}
+      {!regions.length ? (
+        <Note>Drag over the picture, or press Add blur area, to enable the button.</Note>
+      ) : null}
+
       <RadioCards
         name="blurMode"
         value={mode}
@@ -979,6 +1008,13 @@ function BlurWorkarea({ files, values, setValue }: WorkareaProps) {
 export const blurFaceTool: ToolImpl = {
   Panel: BlurPanel,
   Workarea: BlurWorkarea,
+
+  /*
+   * Blurring nothing is not a job. The panel explains how to mark an area, and
+   * the CTA stays disabled until one exists, rather than failing silently.
+   */
+  isReady: ({ files, values }) =>
+    files.length > 0 && parseRegions(values[BLUR_REGIONS_KEY]).length > 0,
 
   async run({ files, values, setProgress, setStatus }) {
     const regions = parseRegions(values[BLUR_REGIONS_KEY]);

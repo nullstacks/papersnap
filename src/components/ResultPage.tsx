@@ -132,6 +132,14 @@ const CONTINUE_BY_TOOL: Record<string, Array<[string, string]>> = {
     ['resize-image', 'Resize IMAGE'],
     ['compress-image', 'Compress IMAGE'],
   ],
+
+  /* Without this the crop result fell through to the PDF list and suggested
+     merging and watermarking documents. */
+  'crop-image': [
+    ['rotate-image', 'Rotate IMAGE'],
+    ['resize-image', 'Resize IMAGE'],
+    ['compress-image', 'Compress IMAGE'],
+  ],
   'convert-to-jpg': [
     ['compress-image', 'Compress IMAGE'],
     ['resize-image', 'Resize IMAGE'],
@@ -213,10 +221,17 @@ export function ResultPage({
           onClick={primary ? () => onDownloadOne(primary) : onDownloadAll}
           /* nowrap from tablet up keeps the label on one line; on a phone the
              button is full width, which the shorter line still fits. */
-          className={`order-1 inline-flex min-h-[56px] w-full max-w-[360px] items-center justify-center gap-3 rounded-xl border-0 px-6 py-4 text-[18px] leading-6 font-medium whitespace-nowrap text-white shadow-btn transition-colors sm:order-2 sm:w-auto sm:max-w-none sm:px-10 sm:py-6 sm:text-[24px] sm:leading-7 ${primaryBg}`}
+          /*
+           * The label must be allowed to shrink on the narrowest phones: at
+           * 320px "Download compressed IMAGES" is 296px of text inside a 288px
+           * pill, and nowrap pushed it out of its own button. `min-w-0` plus a
+           * wrapping span from 0 to sm keeps it inside; from sm up there is
+           * room for one line again.
+           */
+          className={`order-1 inline-flex min-h-[56px] w-full min-w-0 max-w-[360px] items-center justify-center gap-2 rounded-xl border-0 px-4 py-4 text-[17px] leading-6 font-medium text-white shadow-btn transition-colors sm:order-2 sm:w-auto sm:max-w-none sm:gap-3 sm:px-10 sm:py-6 sm:text-[24px] sm:leading-7 sm:whitespace-nowrap ${primaryBg}`}
         >
-          <img src={ICONS.download} alt="" aria-hidden="true" className="h-[22px] w-[22px] shrink-0" />
-          {copy.action}
+          <img src={ICONS.download} alt="" aria-hidden="true" className="h-[20px] w-[20px] shrink-0 sm:h-[22px] sm:w-[22px]" />
+          <span className="min-w-0 text-center sm:text-left">{copy.action}</span>
         </button>
 
         <div className="order-3 flex flex-row gap-2 sm:flex-col">

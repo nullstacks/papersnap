@@ -26,7 +26,7 @@ export function ProcessButton({ label, disabled, busy, onClick, width, family = 
       /* Desktop keeps the reference's fixed 252px CTA; on phones it becomes a
          comfortable full-width target pinned above the safe area. */
       style={{ ['--cta-w' as string]: `${width}px` }}
-      className={`fixed right-3 bottom-3 left-3 z-30 flex min-h-[52px] items-center justify-center rounded-xl border-0 px-3 py-2 text-[19px] leading-6 font-bold text-white shadow-cta transition-colors disabled:cursor-not-allowed sm:min-h-[56px] lg:right-6 lg:bottom-6 lg:left-auto lg:min-h-[64px] lg:w-[var(--cta-w)] lg:text-[21px] lg:leading-[26px] ${
+      className={`fixed right-3 bottom-3 left-3 z-[60] flex min-h-[52px] items-center justify-center rounded-xl border-0 px-3 py-2 text-[19px] leading-6 font-bold text-white shadow-cta transition-colors disabled:cursor-not-allowed sm:min-h-[56px] lg:right-6 lg:bottom-6 lg:left-auto lg:min-h-[64px] lg:w-[var(--cta-w)] lg:text-[21px] lg:leading-[26px] ${
         /*
          * A disabled button swaps to a pale tint with dark ink instead of fading
          * out. At 45% opacity the white label fell below the contrast floor,

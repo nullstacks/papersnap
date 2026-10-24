@@ -135,27 +135,27 @@ export function FileCard({
           title="View"
           aria-label={`View ${entry.name}`}
           onClick={() => onZoom(entry)}
-          className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border-0 bg-subtle p-[3px] text-brand shadow-chip transition-colors hover:bg-brand hover:text-white"
+          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-brand shadow-chip transition-colors hover:bg-brand hover:text-white sm:h-6 sm:w-6 sm:p-[3px]"
         >
-          <ZoomIcon className="h-3.5 w-3.5" />
+          <ZoomIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
         </button>
         <button
           type="button"
           title="Rotate"
           aria-label={`Rotate ${entry.name}`}
           onClick={() => onRotate(entry.id)}
-          className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border-0 bg-subtle p-[3px] text-brand shadow-chip transition-colors hover:bg-brand hover:text-white"
+          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-brand shadow-chip transition-colors hover:bg-brand hover:text-white sm:h-6 sm:w-6 sm:p-[3px]"
         >
-          <RotateGlyphIcon className="h-3.5 w-3.5" />
+          <RotateGlyphIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
         </button>
         <button
           type="button"
           title="Remove"
           aria-label={`Remove ${entry.name}`}
           onClick={() => onRemove(entry.id)}
-          className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border-0 bg-subtle p-[3px] text-ink-2 shadow-chip transition-colors hover:bg-brand hover:text-white"
+          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-ink-2 shadow-chip transition-colors hover:bg-brand hover:text-white sm:h-6 sm:w-6 sm:p-[3px]"
         >
-          <CloseIcon className="h-3 w-3" />
+          <CloseIcon className="h-4 w-4 sm:h-3 sm:w-3" />
         </button>
       </div>
 

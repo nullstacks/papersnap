@@ -322,7 +322,14 @@
     opacity: 1;
   }
 
-  @media (hover: none), (pointer: coarse) {
+  /*
+   * Also always shown on narrow screens, which is where the touch devices are.
+   * A pure `pointer: coarse` query is the more precise test, but it depends on
+   * what the browser reports — a phone-sized viewport in a desktop browser
+   * reports a fine pointer — and a control that is invisible but clickable is
+   * too dangerous to leave dependent on a hint that may be wrong.
+   */
+  @media (hover: none), (pointer: coarse), (max-width: 1023px) {
     .file-card .file-actions {
       opacity: 1;
     }

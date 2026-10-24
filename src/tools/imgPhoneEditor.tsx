@@ -2550,7 +2550,11 @@ function PhotoEditor({
      * sliver. From md up there is room for the three-column arrangement.
      */
     <div className="flex min-h-[540px] flex-col items-stretch overflow-hidden rounded-xl border border-line bg-surface text-left shadow-card md:flex-row">
-      {/* ---------- left rail ---------- */}
+      {/* ---------- left rail ----------
+          On a phone this is a horizontal strip holding twelve tabs, seven of
+          which start off-screen. `relative` carries a fade at the right edge so
+          the strip reads as scrollable rather than truncated. */}
+      <div className="relative shrink-0 md:w-[72px]">
       <nav
         aria-label="Editor tools"
         className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-line bg-surface py-1 md:w-[72px] md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-b-0"
@@ -2578,6 +2582,11 @@ function PhotoEditor({
           );
         })}
       </nav>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-surface to-transparent md:hidden"
+        />
+      </div>
 
       {/* ---------- canvas column ---------- */}
       <div className="flex min-w-0 flex-1 flex-col bg-canvas">

@@ -91,6 +91,9 @@ export function HomePage() {
           role="tablist"
           aria-label="Tool family"
         >
+          {/* `whitespace-nowrap` plus tighter padding on the narrowest phones:
+              "All tools" otherwise broke onto two lines below 375px, which made
+              the switch change height between breakpoints. */}
           <div className="inline-flex rounded-full border border-line bg-surface p-1">
             {FAMILIES.map((f) => {
               const active = family === f.id;
@@ -101,7 +104,7 @@ export function HomePage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => chooseFamily(f.id)}
-                  className={`rounded-full px-5 py-1.5 text-[14px] font-semibold transition-colors ${
+                  className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors sm:px-5 sm:text-[14px] ${
                     active
                       ? f.id === 'image'
                         ? 'bg-img text-white shadow-btn'

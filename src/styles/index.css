@@ -1,0 +1,312 @@
+@import 'tailwindcss';
+@import './fonts.css';
+
+/*
+ * PDFDock design system.
+ *
+ * Every token below was read off the reference tool pages (computed styles +
+ * the live stylesheet), so the palette, type scale and spacing match exactly
+ * rather than being approximated.
+ */
+@theme {
+  /* Brand */
+  --color-brand: #e5322d;
+  --color-brand-dark: #bd060a;
+  --color-brand-soft: #fde8e7;
+
+  /* Ink scale */
+  --color-ink: #161616;
+  --color-ink-2: #33333b;
+  --color-body: #47474f;
+  --color-muted: #707078;
+  --color-faint: #85858e;
+  --color-placeholder: #adadb6;
+
+  /* Surfaces */
+  --color-canvas: #f5f5fa; /* work area */
+  --color-card: #fdfdfd; /* file card */
+  --color-surface: #ffffff;
+  --color-subtle: #ebebf4; /* inactive tile */
+  --color-line: #d6d6df;
+  --color-line-soft: #ebebf4;
+
+  /* Semantic */
+  --color-success: #4acd86;
+  --color-success-dark: #1d9d58;
+  --color-info-bg: #def2ff;
+  --color-info-line: #008ee9;
+  --color-warn: #fb7876;
+
+  /* Radii */
+  --radius-tile: 8px;
+  --radius-pill: 12px;
+
+  /* Elevation — straight from the reference components */
+  --shadow-btn: 0 3px 6px 0 rgb(0 0 0 / 0.14);
+  --shadow-card: 0 0 8px 0 rgb(0 0 0 / 0.08);
+  --shadow-tile: 0 2px 2px 0 rgb(0 0 0 / 0.1);
+  --shadow-chip: 0 1px 2px 0 rgb(0 0 0 / 0.6);
+  --shadow-cta: 0 2px 8px 0 rgb(50 50 50 / 0.3);
+
+  /* Type */
+  --font-sans: Graphik, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --text-title: 42px;
+  --text-title--line-height: 52px;
+  --text-subtitle: 22px;
+  --text-subtitle--line-height: 32px;
+  --text-panel: 22px;
+  --text-panel--line-height: 30px;
+  --text-cta: 24px;
+  --text-cta--line-height: 28px;
+  --text-filetile: 12px;
+  --text-filetile--line-height: 16px;
+
+  /* Chrome */
+  --spacing-header: 60px;
+  --spacing-sidebar: 300px;
+  --spacing-sidebar-wide: 440px;
+}
+
+/*
+ * The reference header is fixed and 60px tall; the app reserves that space
+ * with a padding on the body so content never slides underneath.
+ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-body font-sans antialiased;
+    padding-top: var(--spacing-header);
+  }
+
+  /* Normalise the heading margins the reference sheet depends on. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
+    margin: 0;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  /* Consistent focus ring for keyboard users only. */
+  :where(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* The work area is an app surface: no page scroll behind it. */
+  body.app-shell {
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  /* ---------- the 300px tool sidebar column ---------- */
+  .tool-sidebar {
+    flex: 0 0 var(--spacing-sidebar);
+    @apply flex flex-col bg-surface;
+    border-left: 1px solid rgb(0 0 0 / 0.2);
+    /* Clear the fixed process button so the last control is never trapped
+       behind it. */
+    padding-bottom: 110px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+    /* Keep the scrollbar from sitting on top of the content. */
+    scrollbar-gutter: stable;
+  }
+
+  /* ---------- primary red button ---------- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-3 border-0 font-medium text-white;
+    min-height: 80px;
+    min-width: 330px;
+    padding: 24px 48px;
+    font-size: var(--text-cta);
+    line-height: var(--text-cta--line-height);
+    background: var(--color-brand);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-btn);
+    transition: background-color 0.1s linear;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-brand-dark);
+  }
+
+  /* ---------- round icon button ---------- */
+  .btn-icon-round {
+    @apply inline-flex items-center justify-center rounded-full bg-brand text-white;
+    width: 36px;
+    height: 36px;
+    box-shadow: var(--shadow-btn);
+    transition: background-color 0.1s linear;
+  }
+
+  .btn-icon-round:hover {
+    background: var(--color-ink);
+  }
+
+  .btn-icon-round-white {
+    @apply bg-surface text-ink;
+  }
+
+  .btn-icon-round-white:hover {
+    background: var(--color-surface);
+  }
+
+  /* ---------- sidebar option titles ---------- */
+  .option-title {
+    @apply text-ink-2 font-medium;
+    margin-bottom: 8px;
+  }
+
+  /* ---------- blue information callout ---------- */
+  .info-box {
+    @apply text-ink;
+    padding: 10px 14px 12px 40px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 22px;
+    letter-spacing: 0.3px;
+    background: var(--color-info-bg);
+    border: 1px solid var(--color-info-line);
+    border-radius: 8px;
+    position: relative;
+    text-align: left;
+  }
+
+  .info-box::before {
+    content: 'i';
+    position: absolute;
+    left: 13px;
+    top: 12px;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--color-info-line);
+    border-radius: 50%;
+    color: var(--color-info-line);
+    font: 700 11px/15px Georgia, serif;
+    text-align: center;
+  }
+
+  /* ---------- file card ---------- */
+  .file-card {
+    @apply relative flex flex-col items-center justify-center;
+    margin: 4px;
+    width: 198px;
+    height: 244px;
+    background: var(--color-card);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+    cursor: grab;
+    /* The card must not shrink below its cover or the tooltip clips. */
+    flex: 0 0 auto;
+  }
+
+  /* Phones stack one card per row at the reference's larger size; the two-up
+     layout only kicks in once there is room. */
+  @media (max-width: 639px) {
+    .file-card {
+      width: 232px;
+      height: 286px;
+    }
+    .file-card img {
+      max-height: 216px;
+      max-width: 180px;
+    }
+  }
+
+  .file-card:active {
+    cursor: grabbing;
+  }
+
+  /* Reveal the per-file actions on hover, as the reference does. */
+  .file-card .file-actions {
+    opacity: 0;
+    transition: opacity 0.12s linear;
+  }
+
+  .file-card:hover .file-actions,
+  .file-card:focus-within .file-actions {
+    opacity: 1;
+  }
+
+  .file-name {
+    @apply block w-full truncate text-center;
+    font-size: var(--text-filetile);
+    line-height: var(--text-filetile--line-height);
+    padding: 6px 8px;
+  }
+}
+
+/* Respect the reduced-motion preference everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   Dark theme
+   Only the token layer is overridden; every component reads these tokens, so
+   nothing else needs a dark-specific rule.
+   ========================================================================== */
+:root[data-theme='dark'] {
+  --color-brand: #f0524d;
+  --color-brand-dark: #d22722;
+  --color-brand-soft: #3a1b1a;
+
+  --color-ink: #f2f2f6;
+  --color-ink-2: #dcdce4;
+  --color-body: #b6b6c2;
+  --color-muted: #8b8b99;
+  --color-faint: #7b7b88;
+  --color-placeholder: #5d5d6b;
+
+  --color-canvas: #131318;
+  --color-card: #1c1c23;
+  --color-surface: #191920;
+  --color-subtle: #26262f;
+  --color-line: #33333d;
+  --color-line-soft: #26262f;
+
+  --color-success: #4acd86;
+  --color-success-dark: #6ee0a2;
+  --color-info-bg: #12293a;
+  --color-info-line: #2b7fb8;
+  --color-warn: #f07b78;
+
+  --shadow-btn: 0 3px 6px 0 rgb(0 0 0 / 0.5);
+  --shadow-card: 0 0 8px 0 rgb(0 0 0 / 0.45);
+  --shadow-tile: 0 2px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-chip: 0 1px 2px 0 rgb(0 0 0 / 0.7);
+  --shadow-cta: 0 2px 8px 0 rgb(0 0 0 / 0.55);
+}
+
+/* The file cover is rendered by the PDF engine on white; keep the sheet white
+   in both themes so documents look the way they will print, but soften the
+   glow around it in dark mode. */
+:root[data-theme='dark'] .file-card img {
+  box-shadow: 0 0 6px 2px rgb(0 0 0 / 0.6);
+}
+
+/* Native controls (select arrows, scrollbars) should follow the theme. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}

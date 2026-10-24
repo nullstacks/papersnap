@@ -1,0 +1,14 @@
+node_modules/
+dist/
+
+# Build info
+*.tsbuildinfo
+
+# Local scratch: reference captures, test fixtures, generators
+_test/
+_ref/
+_legacy-src/
+_gen/
+
+*.log
+.DS_Store

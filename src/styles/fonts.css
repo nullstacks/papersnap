@@ -1,0 +1,42 @@
+/*
+ * Bundled Graphik faces — self-hosted so the app works fully offline.
+ *
+ * The files live in src/assets so Vite fingerprints them and rewrites the URLs
+ * for whatever base path the site is served from (GitHub Pages project sites
+ * are served from /<repo>/, so hard-coded /font/... would 404 there).
+ */
+@font-face {
+  font-family: Graphik;
+  src: url('../assets/fonts/Graphik-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: Graphik;
+  src: url('../assets/fonts/Graphik-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: Graphik;
+  src: url('../assets/fonts/Graphik-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: Graphik;
+  src: url('../assets/fonts/Graphik-Semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: Graphik;
+  src: url('../assets/fonts/Graphik-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

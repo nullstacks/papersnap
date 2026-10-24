@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="38" viewBox="0 0 168 38">
+  <path fill="#E5322D" d="M18.9 0c3.7 0 6.4 2.2 8 4.9a9.4 9.4 0 0 1 4.1-4l12.2 11.9a9.7 9.7 0 0 1-6.2 6.2 24.5 24.5 0 0 0-9.5 9.9 24.4 24.4 0 0 0-9.5-9.9C16 18.4 11 15.8 11 10.5 11 4.8 15.2 0 18.9 0z"/>
+  <path fill="#FFCFCE" d="M30.1 14.6V4.4L40.4 14.6H30.1z"/>
+  <text x="46" y="24.5" font-family="Graphik, Helvetica, Arial, sans-serif" font-size="20.5" font-weight="700" fill="#ffffff" letter-spacing="0.2">PDF<tspan font-weight="500" fill="#E5322D">Dock</tspan></text>
+</svg>

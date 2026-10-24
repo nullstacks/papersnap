@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>PDFDock — every PDF tool, running in your browser</title>
+    <meta
+      name="description"
+      content="Merge, split, compress, convert, rotate, unlock and watermark PDFs entirely in your browser. No uploads, no accounts, no server."
+    />
+    <!-- Vite rewrites these absolute paths with the configured base, so they
+         resolve correctly on a GitHub Pages project site (/<repo>/). -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicons-pdf/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/img/app-icon.png" />
+    <script>
+      /* Apply the saved theme before first paint so there is no flash. */
+      (function () {
+        try {
+          var t = localStorage.getItem('pdfdock-theme');
+          if (t !== 'light' && t !== 'dark') t = 'light';
+          document.documentElement.dataset.theme = t;
+          document.documentElement.style.colorScheme = t;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

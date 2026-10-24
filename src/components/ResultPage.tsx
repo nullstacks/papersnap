@@ -90,7 +90,9 @@ export function ResultPage({
         <button
           type="button"
           onClick={primary ? () => onDownloadOne(primary) : onDownloadAll}
-          className="inline-flex min-h-[56px] w-full max-w-[330px] items-center justify-center gap-3 rounded-xl border-0 bg-brand px-6 py-4 text-[18px] leading-6 font-medium text-white shadow-btn transition-colors hover:bg-brand-dark sm:w-auto sm:px-12 sm:py-6 sm:text-[24px] sm:leading-7"
+          /* nowrap keeps the label on one line from tablet up; on a phone the
+             button is full width so the shorter text still fits. */
+          className="inline-flex min-h-[56px] w-full max-w-[330px] items-center justify-center gap-3 rounded-xl border-0 bg-brand px-6 py-4 text-[18px] leading-6 font-medium whitespace-nowrap text-white shadow-btn transition-colors hover:bg-brand-dark sm:w-auto sm:max-w-none sm:px-10 sm:py-6 sm:text-[24px] sm:leading-7"
           style={{ minWidth: 0 }}
         >
           <img src={ICONS.download} alt="" aria-hidden="true" className="h-[22px] w-[22px] shrink-0" />

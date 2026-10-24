@@ -74,8 +74,18 @@ export type FieldValues = Record<string, string | boolean | null>;
  * which panel to render and how to execute.
  */
 export interface ToolImpl {
-  /** Sidebar panel component. */
+  /**
+   * Options column (the sidebar). Renders controls only — never page
+   * thumbnails: page picking belongs in the main work area, where there is
+   * room for a readable grid.
+   */
   Panel: React.ComponentType<PanelProps>;
+  /**
+   * Optional content for the main work area, rendered beneath the file cards.
+   * Page-selection tools use this to show their page grid, matching the
+   * reference where the pages occupy the canvas and the sidebar holds options.
+   */
+  Workarea?: React.ComponentType<WorkareaProps>;
   /**
    * Optional readiness gate beyond the file count — e.g. rotate needs a
    * queued rotation, protect needs a password.
@@ -92,3 +102,18 @@ export interface PanelProps {
   /** Bump to re-evaluate readiness (e.g. after queueing a rotation). */
   requestUpdate: () => void;
 }
+
+/** Props for a tool's work-area content. */
+export interface WorkareaProps {
+  files: WorkFile[];
+  values: FieldValues;
+  setValue: (name: string, value: string | boolean | null) => void;
+  requestUpdate: () => void;
+}
+
+/**
+ * Per-page selection state, stored as a comma-separated list of one-based page
+ * numbers in `FieldValues`. Kept as a string so it round-trips through the
+ * same value bag as every other option.
+ */
+export const PAGE_SELECTION_KEY = 'pageSelection';

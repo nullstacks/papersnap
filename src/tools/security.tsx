@@ -11,6 +11,7 @@ import {
   baseName,
   bytesFor,
   loadPdf,
+  loadPdfStrict,
   pdfResult,
   rebuildWithoutEncryption,
 } from '@/lib/pdf';
@@ -119,21 +120,30 @@ function CheckRow({
 
 async function unlockedBytes(bytes: Uint8Array, password: string): Promise<Uint8Array> {
   /*
-   * pdf-lib only drops the /Encrypt dictionary when it actually decrypted the
-   * streams. Saving a document it could not decrypt would produce a corrupt
-   * file, so fall back to a page-by-page rebuild, which re-serialises every
-   * object without encryption.
+   * Strict load, not the permissive one: with `ignoreEncryption` a WRONG
+   * password loads happily and keeps its /Encrypt dictionary, so the rejection
+   * would never surface. Here pdf-lib throws "Password incorrect" instead.
    */
   try {
-    const doc = await loadPdf(bytes, password || undefined);
+    const doc = await loadPdfStrict(bytes, password || undefined);
     if (!doc.isEncrypted) return doc.save();
+    throw new Error(
+      password
+        ? 'That password is not correct for this PDF.'
+        : 'This PDF is password protected. Enter its password to unlock it.',
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    if (/password/i.test(message)) {
-      throw new Error('This PDF needs its password before it can be unlocked.');
+    if (/password|encrypt|decrypt/i.test(message)) {
+      throw new Error(
+        password
+          ? 'That password is not correct for this PDF.'
+          : 'This PDF is password protected. Enter its password to unlock it.',
+      );
     }
+    /* An unrelated parse failure: fall back to the structural rebuild. */
+    return rebuildWithoutEncryption(bytes, password || undefined);
   }
-  return rebuildWithoutEncryption(bytes, password || undefined);
 }
 
 function UnlockPanel({ values, setValue }: PanelProps) {

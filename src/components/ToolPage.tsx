@@ -302,12 +302,12 @@ export function ToolPage({ slug }: { slug: string }) {
             </div>
           )}
 
-          {hasFiles && (
+          {hasFiles && !impl?.Workarea && (
             /*
              * The reference stacks cards in a single centred column on a phone
              * and wraps them side by side from tablet width up.
              */
-            <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-0">
+            <div className="grid grid-cols-2 justify-items-center gap-3 pt-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-0">
               {files.map((entry, index) => (
                 <FileCard
                   key={entry.id}
@@ -340,8 +340,25 @@ export function ToolPage({ slug }: { slug: string }) {
             </div>
           )}
 
+          {/*
+           * Tool content that belongs on the canvas rather than in the sidebar
+           * — page-picking grids for Remove/Extract/Split. The file cards are
+           * hidden in that case: the pages themselves become the subject.
+           */}
+          {hasFiles && impl?.Workarea && (
+            <div className="w-full" data-testid="workarea-tool">
+              <WorkareaSlot
+                impl={impl}
+                files={files}
+                values={values}
+                setValue={setValue}
+                requestUpdate={requestUpdate}
+              />
+            </div>
+          )}
+
           {/* Drag-to-reorder hint, only where order matters. */}
-          {hasFiles && files.length > 1 && (
+          {hasFiles && files.length > 1 && !impl?.Workarea && (
             <p className="mt-4 text-[13px] text-muted">
               Drag a file to change its position.
             </p>
@@ -354,7 +371,7 @@ export function ToolPage({ slug }: { slug: string }) {
             </div>
           )}
 
-          {hasFiles && files.length === 1 && (
+          {hasFiles && files.length === 1 && !impl?.Workarea && (
             <div className="mt-2 text-sm text-muted">
               {files[0].pages ? `${files[0].pages} page${files[0].pages === 1 ? '' : 's'} · ` : ''}
               {prettySize(files[0].size)}
@@ -445,6 +462,24 @@ export function ToolPage({ slug }: { slug: string }) {
       )}
     </div>
   );
+}
+
+/**
+ * Renders a tool's optional work-area content.
+ * Kept separate so the main render stays readable.
+ */
+function WorkareaSlot({
+  impl,
+  ...props
+}: {
+  impl: ToolImpl;
+  files: WorkFile[];
+  values: FieldValues;
+  setValue: (name: string, value: string | boolean | null) => void;
+  requestUpdate: () => void;
+}) {
+  const Slot = impl.Workarea;
+  return Slot ? <Slot {...props} /> : null;
 }
 
 /**

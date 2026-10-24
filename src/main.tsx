@@ -19,3 +19,16 @@ createRoot(root).render(
     </HashRouter>
   </StrictMode>,
 );
+
+/*
+ * Register the offline worker so the app keeps working without a network once
+ * it has been installed. Only meaningful over https or localhost, which are the
+ * only contexts service workers are allowed in.
+ */
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
+      /* Offline support is a bonus; never break the app over it. */
+    });
+  });
+}

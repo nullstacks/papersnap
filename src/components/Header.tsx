@@ -12,6 +12,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { NAV_GROUPS, NAV_PRIMARY, TOOL_BY_SLUG } from '@/content/tools';
 import brandMark from '@/assets/img/brand.svg';
 import { useTheme } from '@/hooks/useTheme';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { ICONS } from './Icons';
 
 const CONVERT_TO = ['jpg-to-pdf', 'word-to-pdf', 'powerpoint-to-pdf', 'excel-to-pdf', 'html-to-pdf'];
@@ -66,6 +67,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const { theme, toggle: toggleTheme } = useTheme();
+  const install = useInstallPrompt();
 
   /* Close any open menu on outside click or Escape. */
   useEffect(() => {
@@ -182,6 +184,21 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          {install.available && (
+            <button
+              type="button"
+              onClick={install.install}
+              title="Install PDFDock as an app"
+              className="hidden h-9 items-center gap-2 rounded-full border border-line bg-surface px-3 text-[13px] font-medium text-ink-2 hover:border-muted md:flex"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3v12" />
+                <path d="m7 12 5 5 5-5" />
+                <path d="M5 21h14" />
+              </svg>
+              Install
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleTheme}
@@ -279,9 +296,23 @@ export function Header() {
         </div>
       </nav>
 
-      {/* ---------- mobile sheet ---------- */}
+      {/* Mobile sheet */}
       {menuOpen && (
         <div className="fixed inset-x-0 top-[60px] bottom-0 z-50 overflow-y-auto border-t border-line bg-surface px-4 pt-4 pb-10 lg:hidden">
+          {install.available && (
+            <button
+              type="button"
+              onClick={install.install}
+              className="mb-5 flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-[15px] font-semibold text-white"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3v12" />
+                <path d="m7 12 5 5 5-5" />
+                <path d="M5 21h14" />
+              </svg>
+              Install app
+            </button>
+          )}
           <div className="mb-5">
             <div className="mb-2 text-[11.5px] font-semibold tracking-[0.04em] text-muted uppercase">
               Main tools

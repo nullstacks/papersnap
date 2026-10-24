@@ -42,6 +42,21 @@ export async function loadPdf(bytes: Uint8Array, password?: string) {
   });
 }
 
+/**
+ * Load a document and prove it was really decrypted.
+ *
+ * `ignoreEncryption: true` makes a *wrong* password succeed silently — the
+ * document loads and keeps its /Encrypt dictionary rather than throwing. Tools
+ * that must reject a bad password therefore load without that flag, so pdf-lib
+ * surfaces its "Password incorrect" error.
+ */
+export async function loadPdfStrict(bytes: Uint8Array, password?: string) {
+  return PDFDocument.load(bytes, {
+    updateMetadata: false,
+    ...(password ? { password } : {}),
+  });
+}
+
 /** Open a document for rendering (pdf.js). */
 export async function loadForView(bytes: Uint8Array) {
   return pdfjs.getDocument({ data: bytes, isEvalSupported: false, useSystemFonts: true })

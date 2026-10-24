@@ -13,6 +13,13 @@
          resolve correctly on a GitHub Pages project site (/<repo>/). -->
     <link rel="icon" type="image/png" sizes="32x32" href="/img/favicons-pdf/favicon-32x32.png" />
     <link rel="apple-touch-icon" href="/img/app-icon.png" />
+    <!-- Installable app: the manifest plus the service worker registered in
+         main.tsx let the browser offer "Install app". -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="PDFDock" />
     <script>
       /* Apply the saved theme before first paint so there is no flash. */
       (function () {

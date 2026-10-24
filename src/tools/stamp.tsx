@@ -129,14 +129,23 @@ function SignaturePad({
    */
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !signature) return;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    /* Start from white paper so the canvas never reflects the UI theme. */
+    paintSheet(ctx, canvas.width, canvas.height);
+
+    if (!signature) return;
     const img = new Image();
     img.onload = () => {
-      canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      paintSheet(ctx, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       hasStrokesRef.current = true;
       setHasStrokes(true);
     };
     img.src = signature;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* Pointer coordinates are in CSS pixels; scale them into the bitmap so the
@@ -151,10 +160,21 @@ function SignaturePad({
   };
 
   const strokeSettings = (ctx: CanvasRenderingContext2D) => {
+    /*
+     * The pad mirrors what will be stamped onto the page: dark ink on white
+     * paper. It must not follow the UI theme — in dark mode a themed canvas
+     * background made the near-black stroke invisible.
+     */
     ctx.strokeStyle = '#1b1b1f';
     ctx.lineWidth = 2.4;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+  };
+
+  /** Paint the white sheet the signature is drawn on. */
+  const paintSheet = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
   };
 
   const commit = () => {
@@ -215,7 +235,8 @@ function SignaturePad({
 
   const clear = () => {
     const canvas = canvasRef.current;
-    canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    const ctx = canvas?.getContext('2d');
+    if (canvas && ctx) paintSheet(ctx, canvas.width, canvas.height);
     drawingRef.current = false;
     lastRef.current = null;
     hasStrokesRef.current = false;
@@ -229,7 +250,9 @@ function SignaturePad({
         ref={canvasRef}
         width={SIGN_PAD_WIDTH}
         height={SIGN_PAD_HEIGHT}
-        className="block h-auto w-full cursor-crosshair rounded-lg border border-dashed border-line bg-surface"
+        /* bg-white is deliberate: this is the paper the signature is drawn on,
+           and it matches the image that gets stamped into the PDF. */
+        className="block h-auto w-full cursor-crosshair rounded-lg border border-line bg-white"
         style={{ touchAction: 'none' }}
         role="img"
         aria-label="Signature drawing area"

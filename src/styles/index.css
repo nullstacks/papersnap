@@ -215,16 +215,20 @@
     flex: 0 0 auto;
   }
 
-  /* Phones stack one card per row at the reference's larger size; the two-up
-     layout only kicks in once there is room. */
+  /*
+   * Phones show two cards per row. Widths are expressed against the viewport
+   * (not fixed pixels) so a 360px screen still fits two, and the 2px slack keeps
+   * the margins from pushing the pair past the gutter.
+   */
   @media (max-width: 639px) {
     .file-card {
-      width: 232px;
-      height: 286px;
+      width: calc(50vw - 26px);
+      max-width: 168px;
+      height: 218px;
+      margin: 0;
     }
     .file-card img {
-      max-height: 216px;
-      max-width: 180px;
+      max-height: 156px;
     }
   }
 

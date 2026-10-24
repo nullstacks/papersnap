@@ -5,6 +5,7 @@
  * Both panels are plain controlled components — every option lives in the
  * tool's `values` bag so `run` never has to read the DOM.
  */
+import { useRef } from 'react';
 import {
   PDFDocument,
   baseName,
@@ -13,7 +14,9 @@ import {
   parseRangeGroups,
   pdfResult,
 } from '@/lib/pdf';
-import type { FieldValues, PanelProps, ResultFile, ToolImpl } from '@/types';
+import { PageGrid, parseSelection, serializeSelection } from '@/components/PageGrid';
+import { PAGE_SELECTION_KEY } from '@/types';
+import type { FieldValues, PanelProps, ResultFile, ToolImpl, WorkareaProps } from '@/types';
 
 const INPUT =
   'h-8 w-full rounded border border-muted bg-surface px-3 text-sm text-ink focus:outline-none focus:border-ink';
@@ -235,8 +238,67 @@ function splitGroups(mode: string, values: FieldValues, pageCount: number): numb
     : Array.from({ length: pageCount }, (_, i) => [i]);
 }
 
+/**
+ * Split's work-area content.
+ *
+ * In "every page" and "custom ranges" modes the pages are the thing being
+ * configured, so they are shown as a selectable grid. Ticking pages builds the
+ * range expression, which keeps one source of truth: the `rangeInput` value the
+ * splitter already reads.
+ */
+function SplitWorkarea({ files, values, setValue }: WorkareaProps) {
+  const file = files[0];
+  const mode = str(values.splitMode) || 'ranges';
+  const total = file?.pages ?? 0;
+  const selected = parseSelection(values[PAGE_SELECTION_KEY]);
+  const anchor = useRef<number | null>(null);
+
+  if (!file) return null;
+  /* The grid only makes sense where individual pages matter. */
+  if (mode === 'fixed') return null;
+
+  const write = (next: Set<number>) => {
+    setValue(PAGE_SELECTION_KEY, serializeSelection(next));
+    /* Mirror into the range field so the splitter stays the single reader. */
+    setValue('rangeInput', serializeSelection(next));
+  };
+
+  const toggle = (index: number, shiftKey: boolean) => {
+    const next = new Set(selected);
+    if (shiftKey && anchor.current !== null) {
+      const from = Math.min(anchor.current, index);
+      const to = Math.max(anchor.current, index);
+      for (let i = from; i <= to; i++) next.add(i);
+    } else if (next.has(index)) {
+      next.delete(index);
+    } else {
+      next.add(index);
+    }
+    anchor.current = index;
+    write(next);
+  };
+
+  return (
+    <PageGrid
+      file={file}
+      mode="extract"
+      selected={selected}
+      onToggle={toggle}
+      onSelectAll={() => write(new Set(Array.from({ length: total }, (_, i) => i)))}
+      onSelectNone={() => write(new Set())}
+    />
+  );
+}
+
 export const splitTool: ToolImpl = {
   Panel: SplitPanel,
+
+  /*
+   * Split's page picking lives on the canvas like the reference: every page is
+   * shown and the ticked ones become the split points. The sidebar keeps the
+   * mode controls.
+   */
+  Workarea: SplitWorkarea,
 
   async run({ files, values, setProgress, setStatus }) {
     const mode = str(values.splitMode) || 'ranges';

@@ -2,6 +2,19 @@
 @import './fonts.css';
 
 /*
+ * Teach Tailwind what `dark:` means for this app.
+ *
+ * By default the variant follows `prefers-color-scheme`, but PaperSnap has its
+ * own theme toggle that sets `data-theme` on <html>. Without this line every
+ * `dark:` utility in the codebase was keyed to the operating system instead of
+ * the app's toggle: flipping the in-app switch changed the token layer but left
+ * every dark: utility inert, so classes like `dark:bg-[#1c1c23]` and
+ * `dark:hidden` never applied. Those cases worked only by accident when the OS
+ * happened to be dark.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
  * PaperSnap design system.
  *
  * Every token below was read off the reference tool pages (computed styles +

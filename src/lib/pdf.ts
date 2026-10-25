@@ -57,6 +57,25 @@ export async function loadPdfStrict(bytes: Uint8Array, password?: string) {
   });
 }
 
+/**
+ * Load a document for an EDITING tool.
+ *
+ * `loadPdf` deliberately tolerates encryption so a file card can still show the
+ * page count of a protected document. Tools must not: pdf-lib cannot decrypt
+ * for them, so an encrypted input copies through as blank pages and the visitor
+ * gets a silently corrupted result with no error. This wrapper turns that into
+ * a message they can act on.
+ */
+export async function loadToolPdf(bytes: Uint8Array, name: string) {
+  const doc = await loadPdf(bytes);
+  if (doc.isEncrypted) {
+    throw new Error(
+      `"${name}" is password protected. Unlock it first, then run this tool on the unlocked copy.`,
+    );
+  }
+  return doc;
+}
+
 /** Open a document for rendering (pdf.js). */
 export async function loadForView(bytes: Uint8Array) {
   return pdfjs.getDocument({ data: bytes, isEvalSupported: false, useSystemFonts: true })
@@ -65,13 +84,20 @@ export async function loadForView(bytes: Uint8Array) {
 
 /* ------------------------------------------------------------------ helpers */
 
-export function isPdf(file: File): boolean {
-  return file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
-}
-
-export function isImage(file: File): boolean {
-  return /^image\//.test(file.type) || /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name || '');
-}
+/* Pure helpers live in ./format so a component can format a byte count without
+ * dragging the whole PDF engine onto the critical path. Re-exported here so the
+ * 20-odd tool modules keep their single import site. */
+export {
+  baseName,
+  downloadBlob,
+  hexToRgb,
+  isImage,
+  isPdf,
+  nextFrame,
+  PAGE_SIZE_OPTIONS,
+  pageSize,
+  prettySize,
+} from './format';
 
 export async function fileBytes(file: File): Promise<Uint8Array> {
   return new Uint8Array(await file.arrayBuffer());
@@ -85,20 +111,6 @@ export async function bytesFor(f: WorkFile): Promise<Uint8Array> {
   return bytes;
 }
 
-/** Format a byte count the way the reference site does. */
-export function prettySize(bytes: number): string {
-  if (!bytes) return '0 KB';
-  const kb = bytes / 1024;
-  if (kb < 1) return `${bytes} B`;
-  if (kb < 1024) return `${Math.round(kb)} KB`;
-  return `${(kb / 1024).toFixed(2).replace(/\.00$/, '')} MB`;
-}
-
-/** Strip the extension so a tool can append its own suffix. */
-export function baseName(name: string): string {
-  return (name || 'document').replace(/\.[^.]+$/, '');
-}
-
 export function pdfBlob(bytes: Uint8Array): Blob {
   return new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' });
 }
@@ -108,124 +120,10 @@ export function pdfResult(bytes: Uint8Array, name: string): ResultFile {
   return { name, blob: pdfBlob(bytes), size: bytes.length };
 }
 
-/** Trigger a browser download. */
-export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  /* Revoke after the click has been handled. */
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
 
-/** Yield to the event loop so the progress UI can paint between pages. */
-export function nextFrame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
-}
-
-/* ---------------------------------------------------------- page geometry */
-
-const PAGE_SIZES: Record<string, [number, number]> = {
-  A0: [2383.94, 3370.39],
-  A1: [1683.78, 2383.94],
-  A2: [1190.55, 1683.78],
-  A3: [841.89, 1190.55],
-  A4: [595.28, 841.89],
-  A5: [419.53, 595.28],
-  A6: [297.64, 419.53],
-  letter: [612, 792],
-  legal: [612, 1008],
-  tabloid: [792, 1224],
-};
-
-export const PAGE_SIZE_OPTIONS = Object.keys(PAGE_SIZES);
-
-export function pageSize(name: string): { width: number; height: number } {
-  const [width, height] = PAGE_SIZES[name] ?? PAGE_SIZES.A4;
-  return { width, height };
-}
-
-/* ------------------------------------------------------------ page ranges */
-
-/**
- * Parse a range expression like "1-3,5,8-10" into zero-based page indexes.
- * Out-of-range pages are ignored; an empty expression means every page.
- */
-export function parseRanges(expr: string, pageCount: number): number[] {
-  const out: number[] = [];
-  const seen = new Set<number>();
-  const add = (n: number) => {
-    if (n >= 1 && n <= pageCount && !seen.has(n - 1)) {
-      seen.add(n - 1);
-      out.push(n - 1);
-    }
-  };
-
-  const text = String(expr ?? '').trim();
-  if (!text) return Array.from({ length: pageCount }, (_, i) => i);
-
-  for (const chunk of text.split(',')) {
-    const part = chunk.trim();
-    if (!part) continue;
-
-    const span = part.match(/^(\d+)\s*-\s*(\d+)$/);
-    if (span) {
-      const a = Math.min(+span[1], +span[2]);
-      const b = Math.max(+span[1], +span[2]);
-      for (let n = a; n <= b; n++) add(n);
-      continue;
-    }
-    const single = part.match(/^(\d+)$/);
-    if (single) {
-      add(+single[1]);
-      continue;
-    }
-    /* "3-" means page 3 to the end; "-4" means 1 through 4. */
-    const open = part.match(/^(\d+)\s*-$/);
-    if (open) {
-      for (let n = +open[1]; n <= pageCount; n++) add(n);
-      continue;
-    }
-    const openStart = part.match(/^-\s*(\d+)$/);
-    if (openStart) {
-      for (let n = 1; n <= +openStart[1]; n++) add(n);
-    }
-  }
-
-  if (!out.length) throw new Error('That page range does not match any page.');
-  return out;
-}
-
-/** Group a range expression into independent chunks, as the split tool needs. */
-export function parseRangeGroups(expr: string, pageCount: number): number[][] {
-  const text = String(expr ?? '').trim();
-  if (!text) return [Array.from({ length: pageCount }, (_, i) => i)];
-
-  const groups: number[][] = [];
-  for (const chunk of text.split(',')) {
-    const part = chunk.trim();
-    if (!part) continue;
-    groups.push(parseRanges(part, pageCount));
-  }
-  return groups.length ? groups : [Array.from({ length: pageCount }, (_, i) => i)];
-}
-
-/* ------------------------------------------------------------------ colour */
-
-/** "#rrggbb" to pdf-lib's normalised rgb(). */
-export function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const m = String(hex).trim().match(/^#?([0-9a-f]{6})$/i);
-  if (!m) return { r: 0, g: 0, b: 0 };
-  const n = parseInt(m[1], 16);
-  return {
-    r: ((n >> 16) & 255) / 255,
-    g: ((n >> 8) & 255) / 255,
-    b: (n & 255) / 255,
-  };
-}
+/* Page-range parsing lives in ./ranges: pure string work that has no business
+ * importing the PDF engine, and now testable on its own. */
+export { parseRangeGroups, parseRanges } from './ranges';
 
 /* ------------------------------------------------------------------ covers */
 

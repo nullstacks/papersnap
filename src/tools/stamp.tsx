@@ -10,7 +10,7 @@ import {
   bytesFor,
   degrees,
   hexToRgb,
-  loadPdf,
+  loadToolPdf,
   pdfResult,
   rgb,
 } from '@/lib/pdf';
@@ -356,7 +356,7 @@ export const signTool: ToolImpl = {
 
     for (const f of files) {
       setStatus(`Signing ${f.name}…`);
-      const doc = await loadPdf(await bytesFor(f));
+      const doc = await loadToolPdf(await bytesFor(f), f.name);
       const font = await doc.embedFont(StandardFonts.Helvetica);
       const image = png ? await doc.embedPng(png) : null;
       const pages = doc.getPages();
@@ -550,7 +550,7 @@ export const watermarkTool: ToolImpl = {
     const results: ResultFile[] = [];
 
     for (const f of files) {
-      const doc = await loadPdf(await bytesFor(f));
+      const doc = await loadToolPdf(await bytesFor(f), f.name);
       const font = await doc.embedFont(StandardFonts.HelveticaBold);
       let image: Awaited<ReturnType<typeof doc.embedPng>> | null = null;
 

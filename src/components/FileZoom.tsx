@@ -6,7 +6,7 @@
  * document before running a tool.
  */
 import { useEffect, useState } from 'react';
-import { bytesFor, isImage, isPdf, prettySize } from '@/lib/pdf';
+import { isImage, isPdf, prettySize } from '@/lib/format';
 import type { WorkFile } from '@/types';
 import { ICONS } from './Icons';
 
@@ -25,8 +25,11 @@ export function FileZoom({ entry, onClose }: { entry: WorkFile; onClose: () => v
       revoke = objectUrl;
       setUrl(objectUrl);
     } else if (pdf) {
-      /* Blob the cached bytes so the browser's PDF viewer can open them. */
-      void bytesFor(entry)
+      /* Blob the cached bytes so the browser's PDF viewer can open them. The
+       * engine is imported here rather than at module scope: this component
+       * renders on the landing page's graph and must not pull pdf-lib in. */
+      void import('@/lib/pdf')
+        .then(({ bytesFor }) => bytesFor(entry))
         .then((bytes) => {
           if (cancelled) return;
           const objectUrl = URL.createObjectURL(

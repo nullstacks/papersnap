@@ -37,6 +37,10 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
+      # Pure-logic regression checks (page ranges, accept filter, sanitiser).
+      - name: Regression checks
+        run: pnpm run test
+
       # Project sites are served from /<repo>/, so the asset base has to match
       # the repository name. HashRouter keeps every route working regardless.
       - name: Build

@@ -6,7 +6,7 @@
  */
 import { Link } from 'react-router-dom';
 import { ALL_TOOL_BY_SLUG as TOOL_BY_SLUG } from '@/content/tools';
-import { prettySize } from '@/lib/pdf';
+import { prettySize } from '@/lib/format';
 import type { ResultFile } from '@/types';
 import { ICONS } from './Icons';
 
@@ -249,9 +249,18 @@ export function ResultPage({
           >
             <img src={ICONS.eye} alt="" aria-hidden="true" className="h-[18px] w-[18px] invert" />
           </button>
+          {/*
+            * Start over discards every uploaded file and every option, so it
+            * asks first. It used to fire straight through: one mis-tap after a
+            * long batch and the whole queue was gone with no undo.
+            */}
           <button
             type="button"
-            onClick={onStartOver}
+            onClick={() => {
+              if (window.confirm('Start over? Your uploaded files and results will be cleared.')) {
+                onStartOver();
+              }
+            }}
             title="Start over"
             aria-label="Start over"
             className={`flex h-9 w-9 items-center justify-center rounded-full border-0 text-white shadow-btn ${primaryBg}`}
@@ -367,10 +376,13 @@ function SizeStats({
   const same = pct < 1;
 
   const label = same ? 'Same size as the original' : `${pct}% ${smaller ? 'smaller' : 'larger'}`;
+  /* The success chip used to pair a light-mode literal fill with a text token
+   * that flips to a pale mint in dark mode: 1.49:1, effectively invisible on
+   * every result page. Each tint now carries its own dark counterpart. */
   const tone = same
     ? 'bg-canvas text-muted'
     : smaller
-      ? 'bg-[#e6f9ef] text-success-dark'
+      ? 'bg-[#e6f9ef] text-[#14663a] dark:bg-[#10301f] dark:text-[#6ee0a2]'
       : 'bg-brand-soft text-brand';
 
   return (

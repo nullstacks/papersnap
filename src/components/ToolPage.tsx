@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ALL_TOOL_BY_SLUG as TOOL_BY_SLUG } from '@/content/tools';
 import { loadImplementation } from '@/tools/registry';
-import { downloadBlob, prettySize } from '@/lib/pdf';
+import { downloadBlob, prettySize } from '@/lib/format';
 import type { FieldValues, ResultFile, ToolImpl, WorkFile } from '@/types';
 import { FileCard } from './FileCard';
 import { FileZoom } from './FileZoom';
@@ -22,6 +22,7 @@ import { PreviewDialog } from './PreviewDialog';
 import { describeFile, fileAccepted, reorder } from './fileUtils';
 import { SortIcon } from './Icons';
 import { isImageTool } from '@/lib/accent';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Footer } from './Footer';
 
 export function ToolPage({ slug }: { slug: string }) {
@@ -53,6 +54,10 @@ export function ToolPage({ slug }: { slug: string }) {
   const [preview, setPreview] = useState<ResultFile | null>(null);
   const [zoomed, setZoomed] = useState<WorkFile | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  /* Below lg the panel is a sheet that sits off-screen when closed; at lg and
+   * up it is a permanent column, so it must never be inert there. */
+  const isSheetLayout = useMediaQuery('(max-width: 1023px)');
+  const sheetHidden = isSheetLayout && !sheetOpen;
   const [error, setError] = useState<string | null>(null);
   const seq = useRef(0);
   const dragFrom = useRef(-1);
@@ -73,9 +78,24 @@ export function ToolPage({ slug }: { slug: string }) {
     setPreview(null);
     seq.current = 0;
 
-    void loadImplementation(slug).then((loaded) => {
-      if (active) setImpl(loaded);
-    });
+    void loadImplementation(slug)
+      .then((loaded) => {
+        if (!active) return;
+        setImpl(loaded);
+        if (!loaded) setError('That tool could not be loaded. Reload the page and try again.');
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        /* A lazy chunk can fail outright when the tab is offline and the worker
+         * never cached it, or after a deploy replaced the hashed filename.
+         * Without this catch the page just sat there with a permanently
+         * disabled button and no explanation. */
+        setError(
+          err instanceof Error
+            ? `That tool could not be loaded (${err.message}). Check your connection, reload the page, and try again.`
+            : 'That tool could not be loaded. Reload the page and try again.',
+        );
+      });
 
     return () => {
       active = false;
@@ -86,10 +106,23 @@ export function ToolPage({ slug }: { slug: string }) {
     async (incoming: File[]) => {
       if (!tool) return;
       const accepted = incoming.filter((f) => fileAccepted(f, tool.accept));
-      if (!accepted.length) return;
+      /*
+       * Say why a file was refused. Dropping a folder of TIFFs or a HEIC photo
+       * used to do nothing at all — no card, no message — which reads as a
+       * broken drop zone rather than a format this browser cannot decode.
+       */
+      const rejected = incoming.filter((f) => !fileAccepted(f, tool.accept));
+      if (!accepted.length) {
+        setError(
+          rejected.length === 1
+            ? `"${rejected[0].name}" is not a format this tool can read.`
+            : `${rejected.length} files were skipped: this tool cannot read those formats.`,
+        );
+        return;
+      }
 
       setResults(null);
-      setError(null);
+      setError(rejected.length ? `${rejected.length} file(s) skipped — unsupported format.` : null);
 
       /* Show the cards immediately, then fill in covers as they render. */
       const placeholders: WorkFile[] = accepted.map((file) => ({
@@ -147,6 +180,16 @@ export function ToolPage({ slug }: { slug: string }) {
       window.removeEventListener('blur', clear);
     };
   }, []);
+
+  /* Escape closes the mobile settings sheet, matching the dialogs. */
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSheetOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [sheetOpen]);
 
   const sortByName = () =>
     setFiles((cur) =>
@@ -228,7 +271,7 @@ export function ToolPage({ slug }: { slug: string }) {
 
   if (!tool) {
     return (
-      <div className="flex h-[calc(100vh-60px)] items-center justify-center text-muted">
+      <div className="flex h-[var(--h-shell)] items-center justify-center text-muted">
         Unknown tool: {slug}
       </div>
     );
@@ -255,7 +298,7 @@ export function ToolPage({ slug }: { slug: string }) {
        * download button above the fold at y = -129. A new key makes the element
        * genuinely new, which resets it.
        */
-      <div key={results[0]?.name} className="h-[calc(100vh-60px)] overflow-y-auto bg-canvas">
+      <div key={results[0]?.name} className="h-[var(--h-shell)] overflow-y-auto bg-canvas">
         <ResultPage
           slug={slug}
           family={family}
@@ -276,7 +319,7 @@ export function ToolPage({ slug }: { slug: string }) {
   const Panel = impl?.Panel;
 
   return (
-    <div className="flex h-[calc(100vh-60px)] flex-col lg:flex-row lg:items-stretch">
+    <div className="flex h-[var(--h-shell)] flex-col lg:flex-row lg:items-stretch">
       {/* ------------------------------------------------------- work area */}
       <div
         className={`relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-canvas text-center transition-colors ${
@@ -507,12 +550,21 @@ export function ToolPage({ slug }: { slug: string }) {
               className="fixed inset-0 z-40 bg-black/40 lg:hidden"
             />
           )}
+          {/*
+            * Closing the sheet only translated it off-screen, so every control
+            * inside stayed in the tab order and the accessibility tree: on a
+            * phone a keyboard or screen-reader user could tab into a panel they
+            * could not see. `inert` removes the whole subtree from both while
+            * leaving the desktop column working, and `aria-hidden` is set to
+            * match so the two never disagree.
+            */}
           <aside
             className={`tool-sidebar max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[78vh] max-lg:shrink-0 max-lg:pb-20 max-lg:rounded-t-2xl max-lg:border-t max-lg:border-l-0 max-lg:border-line max-lg:shadow-[0_-8px_30px_rgba(0,0,0,0.22)] max-lg:transition-transform max-lg:duration-200 ${
               sheetOpen ? 'max-lg:translate-y-0' : 'max-lg:translate-y-full'
             }`}
             data-testid="sidebar"
-            aria-hidden={!sheetOpen ? undefined : false}
+            inert={sheetHidden}
+            {...(sheetHidden ? { 'aria-hidden': true } : {})}
           >
             <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-black/20 bg-surface py-3 lg:justify-center">
               <h2 className="px-4 text-[18px] leading-[26px] font-semibold text-ink-2 lg:px-0 lg:text-[22px] lg:leading-[30px]">
@@ -540,11 +592,6 @@ export function ToolPage({ slug }: { slug: string }) {
               </div>
             ) : null}
 
-            {error && (
-              <div className="mx-4 mt-3 rounded-lg border border-warn bg-brand-soft px-3 py-2 text-left text-[13px] leading-5 text-ink">
-                {error}
-              </div>
-            )}
           </aside>
         </>
       )}
@@ -571,6 +618,39 @@ export function ToolPage({ slug }: { slug: string }) {
           width={252}
           family={family}
         />
+      )}
+
+      {/*
+       * The failure banner lives OUTSIDE the sidebar on purpose.
+       *
+       * It used to render only inside <aside>, which on a phone is translated
+       * off-screen and on desktop is a scroll container nobody had scrolled to.
+       * Every throw from a tool's run() — "Choose the pages to remove first",
+       * "This PDF is password protected", a failed decode — therefore looked
+       * exactly like a dead button: press, spinner, nothing. This banner is
+       * fixed above the CTA, in the eyeline, and announced by assistive tech.
+       */}
+      {error && !busy && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="fixed inset-x-3 bottom-24 z-[70] mx-auto flex max-w-[560px] items-start gap-3 rounded-xl border border-warn bg-surface px-4 py-3 text-left shadow-card sm:bottom-24 lg:right-6 lg:bottom-28 lg:left-auto lg:w-[420px]"
+        >
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand text-[13px] font-bold text-white">
+            !
+          </span>
+          <span className="min-w-0 flex-1 text-[14px] leading-5 text-ink">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            aria-label="Dismiss message"
+            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-0 bg-canvas text-ink-2 hover:bg-subtle"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       )}
 
       {busy && <ProgressOverlay stage={stage} percent={percent} />}

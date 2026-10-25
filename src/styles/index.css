@@ -99,6 +99,15 @@
 
   /* Chrome */
   --spacing-header: 60px;
+  /* Viewport height minus the fixed header.
+   *
+   * 100vh is the LARGE viewport on a phone: it includes the area behind the
+   * collapsing address bar, so anything pinned to the bottom of the shell —
+   * notably the process CTA — ended up underneath the browser chrome. dvh
+   * tracks the visible area. The vh line stays first as the fallback for
+   * engines without dvh support. */
+  --h-shell: calc(100vh - var(--spacing-header));
+  --h-shell: calc(100dvh - var(--spacing-header));
   --spacing-sidebar: 300px;
   --spacing-sidebar-wide: 440px;
 }
@@ -148,6 +157,27 @@
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
     border-radius: 4px;
+  }
+
+  /*
+   * Proxy controls.
+   *
+   * Every option panel renders a real <input> hidden with `sr-only` and paints
+   * its own radio circle or checkbox square beside it. The input still takes
+   * focus, but the ring lands on a 1px clipped element, so a keyboard user
+   * could tab through a whole panel without seeing where they were. These rules
+   * forward the ring to the visible proxy and to the card that contains it.
+   */
+  :where(label):has(> input:focus-visible) {
+    border-radius: 8px;
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  /* The proxy circle/square itself also lights up, for labels that are not
+   * card-shaped and so have no border to outline. */
+  :where(label):has(> input:focus-visible) > span[aria-hidden='true'] {
+    box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-brand);
   }
 
   /* The work area is an app surface: no page scroll behind it. */

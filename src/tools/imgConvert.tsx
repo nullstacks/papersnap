@@ -8,7 +8,8 @@
  * input, and html2canvas is the layout engine that turns it into pixels.
  */
 import html2canvas from 'html2canvas';
-import { decodeBlob, encode, flatten, withSuffix, FORMAT_EXT } from '@/lib/image';
+import { decodeBlob, encode, flatten, release, withSuffix, FORMAT_EXT } from '@/lib/image';
+import { sanitize } from '@/lib/sanitize';
 import {
   ActionButton,
   ActionRow,
@@ -97,16 +98,21 @@ export const toJpgTool: ToolImpl = {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       setStatus(`Converting ${file.name} to JPG...`);
-      const { bmp, width, height } = await decodeBlob(file.file);
-
-      /*
-       * JPEG has no alpha channel, so every transparent pixel has to land on
-       * some colour. Unticking the box leaves the surface clear and lets
-       * encode() composite onto white at the end; ticking it paints the white
-       * first, which is the same result but keeps the intent visible here.
-       */
-      const canvas = flatten(bmp, width, height, flattenWhite ? '#ffffff' : undefined);
-      const blob = await encode(canvas, 'jpg', quality);
+      const decoded = await decodeBlob(file.file);
+      const { bmp, width, height } = decoded;
+      let blob: Blob;
+      try {
+        /*
+         * JPEG has no alpha channel, so every transparent pixel has to land on
+         * some colour. Unticking the box leaves the surface clear and lets
+         * encode() composite onto white at the end; ticking it paints the white
+         * first, which is the same result but keeps the intent visible here.
+         */
+        const canvas = flatten(bmp, width, height, flattenWhite ? '#ffffff' : undefined);
+        blob = await encode(canvas, 'jpg', quality);
+      } finally {
+        release(decoded);
+      }
 
       out.push(imageResult(blob, withSuffix(file.name, '_converted', 'jpg')));
       setProgress(((i + 1) / files.length) * 100);
@@ -332,30 +338,6 @@ function HtmlToImagePanel({ values, setValue }: PanelProps) {
   );
 }
 
-/**
- * Drop everything that could run on its own once the markup is mounted.
- *
- * This is a local copy of the sanitiser in lib/htmlPdf on purpose: importing
- * that module would drag the PDF engine into this image tool's chunk, which is
- * a megabyte for one small function.
- */
-function stripActive(html: string): string {
-  const tpl = document.createElement('template');
-  tpl.innerHTML = html;
-  tpl.content
-    .querySelectorAll('script,iframe,object,embed,link,meta,base,form')
-    .forEach((el) => el.remove());
-  for (const el of tpl.content.querySelectorAll('*')) {
-    for (const attr of Array.from(el.attributes)) {
-      const name = attr.name.toLowerCase();
-      if (name.startsWith('on')) el.removeAttribute(attr.name);
-      if ((name === 'href' || name === 'src') && /^\s*javascript:/i.test(attr.value)) {
-        el.removeAttribute(attr.name);
-      }
-    }
-  }
-  return tpl.innerHTML;
-}
 
 /** Resolve once every image in the host has loaded or failed. */
 function waitForImages(root: HTMLElement): Promise<void> {
@@ -402,7 +384,7 @@ async function renderMarkup(markup: string, width: number): Promise<HTMLCanvasEl
     'color:#161616',
     'background:#ffffff',
   ].join(';');
-  body.innerHTML = stripActive(markup);
+  body.innerHTML = sanitize(markup);
 
   host.appendChild(body);
   document.body.appendChild(host);

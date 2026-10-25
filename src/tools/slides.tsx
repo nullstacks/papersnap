@@ -17,7 +17,7 @@ import {
   baseName,
   bytesFor,
   loadForView,
-  loadPdf,
+  loadToolPdf,
   pdfResult,
   rgb,
 } from '@/lib/pdf';
@@ -648,7 +648,7 @@ export const pdfToPdfATool: ToolImpl = {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       setStatus(`Converting ${file.name} to PDF/A-${level}…`);
-      const src = await loadPdf(await bytesFor(file));
+      const src = await loadToolPdf(await bytesFor(file), file.name);
       const out = await PDFDocument.create();
       const pages = await out.copyPages(src, src.getPageIndices());
       pages.forEach((page) => out.addPage(page));

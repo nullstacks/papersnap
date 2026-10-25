@@ -3,7 +3,7 @@
  * rebuild the PDF from those images. Same trade-off the online services make —
  * at the strongest setting text becomes an image.
  */
-import { PDFDocument, baseName, bytesFor, loadForView, loadPdf, pdfResult } from '@/lib/pdf';
+import { PDFDocument, baseName, bytesFor, loadForView, pdfResult } from '@/lib/pdf';
 import type { FieldValues, PanelProps, ResultFile, ToolImpl } from '@/types';
 
 /* ------------------------------------------------------------------ levels */
@@ -46,10 +46,6 @@ function CompressPanel({ values, setValue }: PanelProps) {
   const level = typeof values['compress_level'] === 'string'
     ? (values['compress_level'] as string)
     : 'recommended';
-  const keepText = typeof values['compress_text'] === 'boolean'
-    ? (values['compress_text'] as boolean)
-    : true;
-
   return (
     <>
       <div className="flex flex-col gap-2">
@@ -88,39 +84,18 @@ function CompressPanel({ values, setValue }: PanelProps) {
         })}
       </div>
 
-      {/* Legacy renders this toggle but its compressor always rasterises, so it
-       * stays a presentation-only control — kept so the panel is unchanged. */}
-      <label className="mt-4 flex items-start gap-3 cursor-pointer text-[15px] text-ink-2">
-        <input
-          type="checkbox"
-          className="sr-only"
-          checked={keepText}
-          onChange={(e) => setValue('compress_text', e.target.checked)}
-        />
-        <span
-          className={
-            keepText
-              ? 'h-6 w-6 shrink-0 rounded border border-success bg-surface'
-              : 'h-6 w-6 shrink-0 rounded border border-muted bg-surface'
-          }
-        >
-          {keepText ? (
-            <svg
-              viewBox="0 0 24 24"
-              className="h-full w-full p-0.5 text-success-dark"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M4 12.5l5 5L20 6.5" />
-            </svg>
-          ) : null}
-        </span>
-        <span>Keep text selectable (slower, larger file)</span>
-      </label>
+      {/*
+       * There used to be a "Keep text selectable (slower, larger file)" checkbox
+       * here. It wrote `compress_text`, which no code path read: the compressor
+       * always rasterises and cannot preserve a text layer, so ticking it
+       * changed nothing and left the visitor believing their PDF still had
+       * selectable text. A switch that lies is worse than no switch, so it is
+       * gone; the info box above states the real trade-off instead.
+       */}
+      <div className="mt-4 rounded-lg border border-line bg-canvas px-3 py-2.5 text-left text-[13px] leading-[19px] text-muted">
+        Pages are re-encoded as images, so the text layer is replaced. If the result
+        would not be smaller, the original file is returned unchanged.
+      </div>
     </>
   );
 }
@@ -171,13 +146,21 @@ export const compressTool: ToolImpl = {
         void doc.destroy();
       }
 
-      let resultBytes = await out.save();
+      let resultBytes: Uint8Array = await out.save();
 
-      /* Rasterising can make an already-image-heavy file bigger, so hand back
-       * the streamlined original in that case. */
+      /*
+       * Rasterising can make an already-image-heavy file bigger. When it does,
+       * hand back the ORIGINAL bytes rather than re-saving them.
+       *
+       * The old fallback re-serialised the input with object streams, which
+       * measured as a no-op: 13,977 -> 13,982 bytes and 5,655 -> 5,660, i.e.
+       * between 100.0% and 100.1% of the input. The result page then printed
+       * "Same size as the original" or, worse, an "N% larger" chip on a tool
+       * whose entire job is to make the file smaller. Returning the input
+       * untouched is both honest and faster (no second serialisation pass).
+       */
       if (resultBytes.length >= bytes.length) {
-        const plain = await loadPdf(bytes.slice());
-        resultBytes = await plain.save({ useObjectStreams: true });
+        resultBytes = bytes;
       }
 
       results.push(pdfResult(resultBytes, `${baseName(f.name)}_compressed.pdf`));

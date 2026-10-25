@@ -25,7 +25,7 @@ import {
   withSuffix,
   type OutFormat,
 } from '@/lib/image';
-import { prettySize } from '@/lib/pdf';
+import { prettySize } from '@/lib/format';
 import type {
   FieldValues,
   PanelProps,

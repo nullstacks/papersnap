@@ -8,13 +8,14 @@
 import {
   decodeBlob,
   encode,
+  release,
   resize,
   sharpen,
   withSuffix,
   type OutFormat,
   FORMAT_EXT,
 } from '@/lib/image';
-import { prettySize } from '@/lib/pdf';
+import { prettySize } from '@/lib/format';
 import type { FieldValues, PanelProps, ResultFile, ToolImpl, WorkFile } from '@/types';
 import { CheckboxField, Info, Label, RadioCards, TextField } from '@/components/controls';
 
@@ -125,19 +126,28 @@ export const compressImageTool: ToolImpl = {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       setStatus(`Compressing ${file.name}…`);
-      const { bmp, width, height } = await decodeBlob(file.file);
-      const format: OutFormat = toJpg ? 'jpg' : formatFor(file);
-      const scaled = resize(bmp, width * level.scale, height * level.scale);
-      let blob = await encode(scaled, format, level.quality);
+      const decoded = await decodeBlob(file.file);
+      const { bmp, width, height } = decoded;
+      let blob: Blob;
+      try {
+        const format: OutFormat = toJpg ? 'jpg' : formatFor(file);
+        const scaled = resize(bmp, width * level.scale, height * level.scale);
+        blob = await encode(scaled, format, level.quality);
 
-      /* Never hand back a file that got bigger — the visitor asked for less. */
-      if (blob.size >= file.size && !toJpg) {
-        const untouched = await encode(resize(bmp, width, height), format, 0.96);
-        if (untouched.size < blob.size) blob = untouched;
-        else blob = file.file;
+        /*
+         * Never hand back a file that got bigger — the visitor asked for less.
+         *
+         * One comparison, no second encode: the previous version re-encoded the
+         * image at full size and 0.96 quality just to decide whether its own
+         * first attempt was worse than the original, so the files that "did
+         * nothing" cost two full encodes before being discarded anyway.
+         */
+        if (blob.size >= file.size && !toJpg) blob = file.file;
+      } finally {
+        release(decoded);
       }
 
-      out.push(imageResult(blob, withSuffix(file.name, '_compressed', format === 'jpg' ? 'jpg' : extFor(file))));
+      out.push(imageResult(blob, withSuffix(file.name, '_compressed', toJpg ? 'jpg' : extFor(file))));
       setProgress(((i + 1) / files.length) * 100);
     }
     return out;

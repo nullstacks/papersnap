@@ -20,7 +20,7 @@ export function App() {
         * (see index.css) so there is exactly one scrollbar, and every page —
         * landing, tool, result — scrolls this element rather than itself.
         */}
-      <main className="h-[calc(100vh-60px)] overflow-y-auto overflow-x-hidden">
+      <main className="h-[var(--h-shell)] overflow-y-auto overflow-x-hidden">
         <Routes>
           <Route path="/" element={<HomePage />} />
           {/* Every catalogued slug gets a route, including the hidden ones, so

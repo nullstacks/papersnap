@@ -10,6 +10,7 @@
  * html2canvas is imported on demand so it stays out of the initial bundle.
  */
 import { PDFDocument, pageSize } from './pdf';
+import { sanitize } from './sanitize';
 
 /* Rasterise at 2x so text stays crisp once placed on the page. */
 const SCALE = 2;
@@ -183,21 +184,3 @@ function waitForImages(root: HTMLElement): Promise<void> {
   ).then(() => undefined);
 }
 
-/** Strip scripts, embeds, forms and inline event handlers. */
-export function sanitize(html: string): string {
-  const tpl = document.createElement('template');
-  tpl.innerHTML = html;
-  tpl.content
-    .querySelectorAll('script,iframe,object,embed,link,meta,base,form')
-    .forEach((el) => el.remove());
-  for (const el of tpl.content.querySelectorAll('*')) {
-    for (const attr of Array.from(el.attributes)) {
-      const name = attr.name.toLowerCase();
-      if (name.startsWith('on')) el.removeAttribute(attr.name);
-      if ((name === 'href' || name === 'src') && /^\s*javascript:/i.test(attr.value)) {
-        el.removeAttribute(attr.name);
-      }
-    }
-  }
-  return tpl.innerHTML;
-}

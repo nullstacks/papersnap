@@ -39,9 +39,16 @@ export function ProcessButton({ label, disabled, busy, onClick, width, family = 
          * the brand blue instead would have cost the identity the whole image
          * family is built on.
          */
+        /*
+         * The disabled tints are pinned per theme rather than following the ink
+         * token. `text-ink-2` flips to a near-white #dcdce4 in dark mode, which
+         * against the light-mode #fbdcdb fill measured 1.06:1 — the label simply
+         * vanished, and that label is the only thing telling the visitor why
+         * the button will not fire. Both pairs below are >= 4.5:1.
+         */
         family === 'image'
-          ? 'bg-img hover:bg-img-dark disabled:bg-[#dbe7fb] disabled:text-ink-2 disabled:hover:bg-[#dbe7fb]'
-          : 'bg-brand hover:bg-brand-dark disabled:bg-[#fbdcdb] disabled:text-ink-2 disabled:hover:bg-[#fbdcdb]'
+          ? 'bg-img hover:bg-img-dark disabled:bg-[#dbe7fb] disabled:text-[#1c2b45] disabled:hover:bg-[#dbe7fb] dark:disabled:bg-[#16243c] dark:disabled:text-[#9dc0ff] dark:disabled:hover:bg-[#16243c]'
+          : 'bg-brand hover:bg-brand-dark disabled:bg-[#fbdcdb] disabled:text-[#6b1a18] disabled:hover:bg-[#fbdcdb] dark:disabled:bg-[#3a1b1a] dark:disabled:text-[#f0b4b2] dark:disabled:hover:bg-[#3a1b1a]'
       }`}
     >
       <span className="flex items-center justify-center px-1.5 whitespace-nowrap">

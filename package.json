@@ -6,19 +6,18 @@
   "description": "Local, in-browser PDF toolkit - React + TypeScript SPA",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:pages": "tsc -b && vite build --base=/PaperSnap/",
+    "build": "tsc -b && vite build && node scripts/build-sw.mjs",
+    "build:pages": "tsc -b && vite build --base=/PaperSnap/ && node scripts/build-sw.mjs",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "test": "node scripts/check-regressions.mjs"
   },
   "dependencies": {
     "@cantoo/pdf-lib": "^2.11.1",
-    "docx": "^9.0.2",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "mammoth": "^1.8.0",
     "pdfjs-dist": "^4.10.38",
-    "pptxgenjs": "^3.12.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",

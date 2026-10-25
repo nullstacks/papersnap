@@ -5,7 +5,7 @@
  * area and the sidebar holds only the summary and any range override. Selection
  * is per-page with shift-click range support.
  */
-import { PDFDocument, baseName, bytesFor, loadPdf, parseRanges, pdfResult } from '@/lib/pdf';
+import { PDFDocument, baseName, bytesFor, loadToolPdf, parseRanges, pdfResult } from '@/lib/pdf';
 import { PageGrid, parseSelection, serializeSelection } from '@/components/PageGrid';
 import { PAGE_SELECTION_KEY } from '@/types';
 import type { PanelProps, ResultFile, ToolImpl, WorkareaProps, WorkFile } from '@/types';
@@ -144,7 +144,7 @@ export const removePagesTool: ToolImpl = {
 
     for (const file of files) {
       setStatus(`Removing pages from ${file.name}…`);
-      const src = await loadPdf(await bytesFor(file));
+      const src = await loadToolPdf(await bytesFor(file), file.name);
       const count = src.getPageCount();
       const drop = new Set(rangeList(text, count));
       /* The grid describes the first document only, so clamp its indexes. */
@@ -268,7 +268,7 @@ export const extractPagesTool: ToolImpl = {
 
     for (const file of files) {
       setStatus(`Extracting pages from ${file.name}…`);
-      const src = await loadPdf(await bytesFor(file));
+      const src = await loadToolPdf(await bytesFor(file), file.name);
       const count = src.getPageCount();
 
       const picked = new Set(rangeList(text, count));

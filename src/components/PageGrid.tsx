@@ -7,8 +7,11 @@
  * work area rather than the sidebar because a 300px column cannot show pages
  * legibly.
  *
- * Rendering is incremental — one page at a time into its own data URL — so a
- * long document shows its first pages immediately instead of blocking.
+ * Rendering is incremental — one page at a time — so a long document shows its
+ * first pages immediately instead of blocking. Pages past a cap are rendered
+ * only when the visitor asks for them: a 300-page PDF used to spend 300 canvas
+ * renders and hold 300 base64 PNGs in memory before the grid was usable, on a
+ * screen where maybe 12 of them are visible.
  */
 import { useEffect, useRef, useState } from 'react';
 import { bytesFor, loadForView } from '@/lib/pdf';
@@ -30,9 +33,19 @@ interface Props {
 /** Thumbnail box, sized so a row of ~5 fits the reference's canvas. */
 const THUMB_W = 128;
 
+/**
+ * How many pages render up front.
+ *
+ * Every rendered page costs a pdf.js page render plus a PNG data URL held in
+ * state. 40 covers any document a person will scroll through in one sitting and
+ * keeps a 500-page scan from freezing the tab; the rest load on demand.
+ */
+const INITIAL_PAGES = 40;
+
 export function PageGrid({ file, mode, selected, onToggle, onSelectAll, onSelectNone }: Props) {
   const [urls, setUrls] = useState<string[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [limit, setLimit] = useState(INITIAL_PAGES);
   const fileId = file.id;
 
   /* The parent re-creates WorkFile objects as covers resolve, so key the effect
@@ -51,8 +64,8 @@ export function PageGrid({ file, mode, selected, onToggle, onSelectAll, onSelect
         const bytes = await bytesFor(latest.current);
         doc = await loadForView(bytes.slice());
 
-        /* Publish each page as soon as it is rendered. */
-        for (let i = 1; i <= doc.numPages; i++) {
+        /* Publish each page as soon as it is rendered, up to the current cap. */
+        for (let i = 1; i <= Math.min(doc.numPages, limit); i++) {
           if (!alive) return;
           const page = await doc.getPage(i);
           const base = page.getViewport({ scale: 1 });
@@ -86,7 +99,7 @@ export function PageGrid({ file, mode, selected, onToggle, onSelectAll, onSelect
     return () => {
       alive = false;
     };
-  }, [fileId]);
+  }, [fileId, limit]);
 
   const total = file.pages ?? urls.length;
   const allSelected = total > 0 && selected.size >= total;
@@ -191,6 +204,22 @@ export function PageGrid({ file, mode, selected, onToggle, onSelectAll, onSelect
 
       {state === 'loading' && (
         <p className="mt-4 text-center text-sm text-muted">Rendering pages…</p>
+      )}
+
+      {/* Pages past the cap are one click away rather than blocking the grid. */}
+      {total > limit && (
+        <div className="mt-5 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLimit((n) => Math.min(total, n + INITIAL_PAGES))}
+            className="rounded-full border border-line bg-surface px-4 py-2 text-[13px] font-medium text-ink-2 hover:border-muted"
+          >
+            Load the next {Math.min(INITIAL_PAGES, total - limit)} pages
+          </button>
+          <span className="text-[12px] text-muted">
+            Showing {Math.min(limit, total)} of {total} pages
+          </span>
+        </div>
       )}
     </div>
   );

@@ -12,7 +12,7 @@ import {
   bytesFor,
   degrees,
   hexToRgb,
-  loadPdf,
+  loadToolPdf,
   pdfResult,
   rgb,
 } from '@/lib/pdf';
@@ -154,7 +154,7 @@ export const rotateTool: ToolImpl = {
 
     for (const f of files) {
       if (!f.rotation) continue;
-      const doc = await loadPdf(await bytesFor(f));
+      const doc = await loadToolPdf(await bytesFor(f), f.name);
       /* The queued angle adds to whatever /Rotate the page already carries;
        * pdf-lib uses a signed angle, hence the wrap back into 0..359. */
       doc
@@ -324,7 +324,7 @@ export const pageNumbersTool: ToolImpl = {
 
     for (const f of files) {
       setStatus(`Numbering ${f.name}…`);
-      const doc = await loadPdf(await bytesFor(f));
+      const doc = await loadToolPdf(await bytesFor(f), f.name);
       const font = await doc.embedFont(StandardFonts.Helvetica);
       const pages = doc.getPages();
 
@@ -428,7 +428,7 @@ export const cropTool: ToolImpl = {
 
     for (const f of files) {
       setStatus(`Cropping ${f.name}…`);
-      const doc = await loadPdf(await bytesFor(f));
+      const doc = await loadToolPdf(await bytesFor(f), f.name);
       doc.getPages().forEach((page) => {
         /* Shrinking the box can drop a margin past the page edge on very small
          * pages, so each side is clamped and the extents keep a 1pt minimum. */

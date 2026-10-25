@@ -10,7 +10,7 @@ import {
   PDFDocument,
   baseName,
   bytesFor,
-  loadPdf,
+  loadToolPdf,
   loadPdfStrict,
   pdfResult,
   rebuildWithoutEncryption,
@@ -120,18 +120,29 @@ function CheckRow({
 
 async function unlockedBytes(bytes: Uint8Array, password: string): Promise<Uint8Array> {
   /*
-   * Strict load, not the permissive one: with `ignoreEncryption` a WRONG
+   * Unlocking is a REBUILD, never a re-save.
+   *
+   * pdf-lib's `save()` re-emits the parsed trailer, so saving a document that
+   * was opened with a password still writes the original /Encrypt dictionary
+   * back out: the "unlocked" file was byte-identical in protection to the
+   * input and any viewer still demanded the password. Copying the pages into a
+   * fresh document drops /Encrypt along with every other inherited object.
+   *
+   * The strict load stays as the gate: with `ignoreEncryption` a WRONG
    * password loads happily and keeps its /Encrypt dictionary, so the rejection
    * would never surface. Here pdf-lib throws "Password incorrect" instead.
    */
   try {
     const doc = await loadPdfStrict(bytes, password || undefined);
-    if (!doc.isEncrypted) return doc.save();
-    throw new Error(
-      password
-        ? 'That password is not correct for this PDF.'
-        : 'This PDF is password protected. Enter its password to unlock it.',
-    );
+    if (!doc.isEncrypted) {
+      /* Not protected at all: hand back the original bytes untouched rather
+       * than a re-serialised copy that could shift the layout. */
+      return bytes;
+    }
+    /* Opened with the password: when the user password was empty pdf-lib can
+     * decrypt, but the /Encrypt dict is still present in the parsed document.
+     * Always rebuild so the output genuinely has no encryption dictionary. */
+    return rebuildWithoutEncryption(bytes, password || undefined);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (/password|encrypt|decrypt/i.test(message)) {
@@ -250,7 +261,7 @@ export const protectTool: ToolImpl = {
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       setStatus(`Encrypting ${f.name}…`);
-      const doc = await loadPdf(await bytesFor(f));
+      const doc = await loadToolPdf(await bytesFor(f), f.name);
       doc.encrypt({
         algorithm: 'AES-256',
         userPassword: pw,
@@ -296,7 +307,7 @@ export const repairTool: ToolImpl = {
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       setStatus(`Rebuilding ${f.name}…`);
-      const src = await loadPdf(await bytesFor(f));
+      const src = await loadToolPdf(await bytesFor(f), f.name);
       const out = await PDFDocument.create();
       const pages = await out.copyPages(src, src.getPageIndices());
       for (const page of pages) out.addPage(page);

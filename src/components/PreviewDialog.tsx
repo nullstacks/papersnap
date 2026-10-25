@@ -6,7 +6,7 @@
  * previews do not leak memory.
  */
 import { useEffect, useState } from 'react';
-import { downloadBlob, prettySize } from '@/lib/pdf';
+import { downloadBlob, prettySize } from '@/lib/format';
 import type { ResultFile } from '@/types';
 import { ICONS } from './Icons';
 

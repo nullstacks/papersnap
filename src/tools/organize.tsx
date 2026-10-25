@@ -10,7 +10,7 @@ import {
   PDFDocument,
   baseName,
   bytesFor,
-  loadPdf,
+  loadToolPdf,
   parseRangeGroups,
   pdfResult,
 } from '@/lib/pdf';
@@ -51,7 +51,7 @@ export const mergeTool: ToolImpl = {
     const out = await PDFDocument.create();
     for (let i = 0; i < files.length; i++) {
       setStatus(`Merging file ${i + 1} of ${files.length}…`);
-      const doc = await loadPdf(await bytesFor(files[i]));
+      const doc = await loadToolPdf(await bytesFor(files[i]), files[i].name);
       const pages = await out.copyPages(doc, doc.getPageIndices());
       for (const page of pages) out.addPage(page);
       setProgress(((i + 1) / files.length) * 92);
@@ -307,7 +307,7 @@ export const splitTool: ToolImpl = {
 
     for (const file of files) {
       setStatus(`Splitting ${file.name}…`);
-      const src = await loadPdf(await bytesFor(file));
+      const src = await loadToolPdf(await bytesFor(file), file.name);
       const count = src.getPageCount();
       const base = baseName(file.name);
       const groups = splitGroups(mode, values, count);

@@ -12,7 +12,7 @@
 import { useState, type DragEvent } from 'react';
 import { CloseIcon, RotateGlyphIcon, ZoomIcon } from './Icons';
 import type { WorkFile } from '@/types';
-import { prettySize } from '@/lib/pdf';
+import { prettySize } from '@/lib/format';
 
 interface Props {
   entry: WorkFile;
@@ -135,27 +135,27 @@ export function FileCard({
           title="View"
           aria-label={`View ${entry.name}`}
           onClick={() => onZoom(entry)}
-          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-brand shadow-chip transition-colors hover:bg-brand hover:text-white sm:h-6 sm:w-6 sm:p-[3px]"
+          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-brand shadow-chip transition-colors hover:bg-brand hover:text-white"
         >
-          <ZoomIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+          <ZoomIcon className="h-4 w-4" />
         </button>
         <button
           type="button"
           title="Rotate"
           aria-label={`Rotate ${entry.name}`}
           onClick={() => onRotate(entry.id)}
-          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-brand shadow-chip transition-colors hover:bg-brand hover:text-white sm:h-6 sm:w-6 sm:p-[3px]"
+          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-brand shadow-chip transition-colors hover:bg-brand hover:text-white"
         >
-          <RotateGlyphIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+          <RotateGlyphIcon className="h-4 w-4" />
         </button>
         <button
           type="button"
           title="Remove"
           aria-label={`Remove ${entry.name}`}
           onClick={() => onRemove(entry.id)}
-          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-ink-2 shadow-chip transition-colors hover:bg-brand hover:text-white sm:h-6 sm:w-6 sm:p-[3px]"
+          className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-subtle p-[5px] text-ink-2 shadow-chip transition-colors hover:bg-brand hover:text-white"
         >
-          <CloseIcon className="h-4 w-4 sm:h-3 sm:w-3" />
+          <CloseIcon className="h-4 w-4" />
         </button>
       </div>
 
@@ -186,12 +186,30 @@ export function FileCard({
               className="pointer-events-none max-h-[178px] max-w-[150px] bg-white shadow-[0_0_5px_2px_rgba(0,0,0,0.1)]"
             />
           ) : (
+            /*
+             * A file the engine could not read used to show a bare "!" and
+             * nothing else, which told the visitor neither what went wrong nor
+             * what to do about it — and the usual cause is simply a format the
+             * browser cannot decode. The reason now sits on the card itself,
+             * matching the message the tool surfaces when it refuses to run.
+             */
             <div
-              className={`flex h-[178px] w-[127px] items-center justify-center rounded bg-canvas text-xs font-bold tracking-widest ${
+              className={`flex h-[178px] w-[127px] flex-col items-center justify-center gap-1.5 rounded bg-canvas px-2 text-center ${
                 entry.error ? 'text-brand' : 'text-muted'
               }`}
             >
-              {entry.error ? '!' : (entry.name.split('.').pop() || 'file').toUpperCase()}
+              {entry.error ? (
+                <>
+                  <span className="text-lg leading-none font-bold">!</span>
+                  <span className="text-[11px] leading-[14px] font-normal normal-case tracking-normal text-brand">
+                    {entry.error}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs font-bold tracking-widest">
+                  {(entry.name.split('.').pop() || 'file').toUpperCase()}
+                </span>
+              )}
             </div>
           )}
         </div>

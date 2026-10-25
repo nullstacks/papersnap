@@ -76,10 +76,44 @@ export async function loadToolPdf(bytes: Uint8Array, name: string) {
   return doc;
 }
 
-/** Open a document for rendering (pdf.js). */
+/**
+ * Where pdf.js should fetch its optional assets from.
+ *
+ * `BASE_URL` already carries the deployment prefix (e.g. "/PaperSnap/"), and
+ * the Vite plugin `pdfjsAssets` copies both folders to the root of the build,
+ * so these resolve on a GitHub Pages project site as well as on localhost.
+ * They are fetched lazily — only a document that actually needs a CMap or a
+ * standard font ever pays for one.
+ */
+const CMAP_URL = `${import.meta.env.BASE_URL}cmaps/`;
+const STANDARD_FONT_URL = `${import.meta.env.BASE_URL}standard_fonts/`;
+
+/**
+ * Open a document for rendering, with full font and encoding support.
+ *
+ * Three settings here are load-bearing and were all missing:
+ *
+ *  - `cMapUrl` / `cMapPacked` — without them pdf.js cannot decode CJK or any
+ *    other non-Latin encoding. Text extraction throws outright ("Ensure that
+ *    the cMapUrl and cMapPacked API parameters are provided") and rendering
+ *    fails, so Chinese, Japanese, Korean and Cyrillic-legacy documents simply
+ *    did not work.
+ *  - `standardFontDataUrl` — without it, the 14 standard PDF fonts are
+ *    substituted with whatever the operating system has, so the same document
+ *    renders differently on Windows, macOS and Android, and a machine with an
+ *    unusual font set renders it wrongly.
+ *  - `useSystemFonts: false` — the point of shipping the standard fonts is to
+ *    stop the OS from deciding how the document looks.
+ */
 export async function loadForView(bytes: Uint8Array) {
-  return pdfjs.getDocument({ data: bytes, isEvalSupported: false, useSystemFonts: true })
-    .promise;
+  return pdfjs.getDocument({
+    data: bytes,
+    isEvalSupported: false,
+    useSystemFonts: false,
+    cMapUrl: CMAP_URL,
+    cMapPacked: true,
+    standardFontDataUrl: STANDARD_FONT_URL,
+  }).promise;
 }
 
 /* ------------------------------------------------------------------ helpers */

@@ -23,6 +23,17 @@ if (!fs.existsSync(swPath)) {
   process.exit(1);
 }
 
+/**
+ * Folders that are fetched lazily and must NOT be precached.
+ *
+ * pdf.js pulls a CMap or a standard font only when a document actually needs
+ * one — 1.85 MB of them exist, and precaching the whole set would make every
+ * first visit download all of it to serve the rare CJK file. They are still
+ * cached after use by the worker's stale-while-revalidate handler, so the
+ * second visit to the same document works offline.
+ */
+const LAZY_DIRS = ['cmaps/', 'standard_fonts/'];
+
 /** Every file the app needs to boot and run offline. */
 function walk(dir, base = '') {
   const out = [];
@@ -35,6 +46,8 @@ function walk(dir, base = '') {
     }
     /* The worker cannot cache itself usefully, and sourcemaps are dev-only. */
     if (rel === 'sw.js' || rel.endsWith('.map')) continue;
+    /* Lazy-by-design payloads: see LAZY_DIRS. */
+    if (LAZY_DIRS.some((d) => rel.startsWith(d))) continue;
     out.push(rel);
   }
   return out;
@@ -59,4 +72,7 @@ source = source.replace(/__VERSION__/g, version);
 fs.writeFileSync(swPath, source);
 
 const bytes = precache.length;
-console.log(`build-sw: precached ${bytes} files, cache version ${version}`);
+const lazy = files.length - (precache.length - 1);
+console.log(
+  `build-sw: precached ${bytes} files (${lazy} lazy assets left to on-demand caching), cache version ${version}`,
+);

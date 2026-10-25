@@ -229,6 +229,57 @@ test('inline data: images survive sanitising', () => {
   assert.ok(out.includes('data:image/png'), out);
 });
 
+/* ------------------------------------------------------- pdf.js asset paths */
+
+console.log('\npdf.js assets (src/lib/pdf.ts + vite.config.ts)');
+
+/*
+ * These guard a bug that was invisible until a Chinese PDF was opened: with no
+ * cMapUrl the extracted text was empty and rendering failed outright, and
+ * without standardFontDataUrl the same document rendered differently on every
+ * operating system. Neither shows up in a build log, so the wiring is asserted
+ * here.
+ */
+const pdfSource = readFileSync(path.join(root, 'src/lib/pdf.ts'), 'utf8');
+const viteSource = readFileSync(path.join(root, 'vite.config.ts'), 'utf8');
+
+test('the render loader passes cMapUrl and cMapPacked', () => {
+  const loader = pdfSource.slice(pdfSource.indexOf('export async function loadForView'));
+  const body = loader.slice(0, loader.indexOf('\n}'));
+  assert.ok(/cMapUrl:/.test(body), 'cMapUrl is missing');
+  assert.ok(/cMapPacked: true/.test(body), 'cMapPacked is missing');
+});
+
+test('the render loader passes standardFontDataUrl and stops using system fonts', () => {
+  const loader = pdfSource.slice(pdfSource.indexOf('export async function loadForView'));
+  const body = loader.slice(0, loader.indexOf('\n}'));
+  assert.ok(/standardFontDataUrl:/.test(body), 'standardFontDataUrl is missing');
+  assert.ok(/useSystemFonts: false/.test(body), 'useSystemFonts must be false');
+});
+
+test('the asset URLs honour the deployment base path', () => {
+  assert.ok(
+    /BASE_URL\}cmaps\//.test(pdfSource),
+    'cmaps URL must be built from import.meta.env.BASE_URL or GitHub Pages will 404',
+  );
+  assert.ok(/BASE_URL\}standard_fonts\//.test(pdfSource), 'standard font URL must use BASE_URL');
+});
+
+test('the vite plugin copies both asset folders into the build', () => {
+  for (const dir of ['cmaps', 'standard_fonts']) {
+    assert.ok(viteSource.includes(`'${dir}'`), `vite config does not copy ${dir}`);
+  }
+  assert.ok(/closeBundle/.test(viteSource), 'assets are only copied on build, not dev');
+});
+
+test('the service worker does not precache the lazy pdf.js assets', () => {
+  const swSource = readFileSync(path.join(root, 'scripts/build-sw.mjs'), 'utf8');
+  assert.ok(
+    /LAZY_DIRS/.test(swSource) && /'cmaps\/'/.test(swSource),
+    'cmaps must be excluded from the precache list, or every first visit downloads 1.1 MB',
+  );
+});
+
 /* ------------------------------------------------------------------ report */
 
 console.log(`\n${passed} passed, ${failed} failed`);

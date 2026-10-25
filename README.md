@@ -34,14 +34,19 @@ before the router mounts.
 
 ## Tools (30)
 
-Two families share one shell. The PDF half follows iLovePDF's layout and
-wording; the image half follows iLoveIMG's, down to its blue CTA — which is why
-`--color-brand` (red) and `--color-img` (blue) exist as separate tokens.
+Two families share one shell. The PDF half follows iLovePDF's layout; the image
+half follows iLoveIMG's, down to its blue CTA — which is why `--color-brand`
+(red) and `--color-img` (blue) exist as separate tokens.
+
+The wording is now our own. The original catalogue reused iLovePDF's marketing
+strings verbatim, which was both a legal grey area and useless for search: 30
+pages carrying a competitor's copy, all behind one URL. `src/content/toolSeo.ts`
+replaced it with original copy written to describe what these tools actually do.
 
 **PDF — Organize** — Merge, Split, Remove pages, Extract pages
 **PDF — Optimize** — Compress, Repair
 **PDF — Convert to PDF** — JPG, Word, PowerPoint, Excel, HTML
-**PDF — Convert from PDF** — JPG, Word, PowerPoint, Excel, PDF/A
+**PDF — Convert from PDF** — JPG, Word\*, PowerPoint\*, Excel\*, PDF/A\*
 **PDF — Edit** — Rotate, Page numbers, Watermark, Crop
 **PDF — Security** — Unlock, Protect (AES-256), Sign
 
@@ -50,10 +55,17 @@ wording; the image half follows iLoveIMG's, down to its blue CTA — which is wh
 **IMAGE — Convert** — Convert to JPG, Convert from JPG, HTML to image
 **IMAGE — Create** — Meme generator
 
+\* Text-only recovery, so these are `hidden: true`: the route still works for an
+old bookmark, but nothing advertises a tool whose output would disappoint. Six
+entries are hidden in total — four PDF, two image — leaving 30 visible.
+
 ## Features
 
-- **Nothing leaves the device.** Files are read with `File.arrayBuffer()` and
-  results handed back as `Blob` downloads.
+- **Nothing leaves the device, and the browser enforces it.** Files are read
+  with `File.arrayBuffer()` and results handed back as `Blob` downloads. On top
+  of that, `public/_headers` ships a Content-Security-Policy with
+  `default-src 'none'` and `connect-src 'self'`, so a dependency that tried to
+  send data anywhere would be blocked rather than merely caught in review.
 - **Drag & drop** anywhere on the tool page, with a full-bleed drop overlay.
 - **Drag to reorder** file cards; the order is what gets merged.
 - **Page picking** for Remove / Extract / Split happens on the canvas, where
@@ -87,7 +99,7 @@ layout, rebuilt to run locally:
 | Watermark IMAGE | Text or logo, position, opacity, angle, tiled mode |
 | Blur face | Optional skin-tone detection plus a hand-drawn region editor |
 | Convert to JPG | Quality presets, transparency flattened onto white |
-| Convert from JPG | PNG or GIF output with static/animated choice |
+| Convert from JPG | PNG or GIF output; GIF silently falls back to PNG in browsers that cannot encode it |
 | HTML to image | Renders pasted markup off-screen and rasterises it |
 | Meme generator | Top/bottom or in-picture captions, draggable layers |
 
@@ -118,9 +130,31 @@ The font lives at `src/assets/fonts/BodoniModa-Bold.woff2` and is referenced as
 pnpm install
 pnpm dev            # http://localhost:5173
 pnpm typecheck      # tsc, strict
-pnpm build          # typecheck + production build into dist/
+pnpm test           # pure-logic regression checks
+pnpm build          # typecheck, build, prerender, CSP hash, service worker
 pnpm preview        # serve the built output
+pnpm deploy         # build, then wrangler deploy
 ```
+
+`pnpm test` runs `scripts/check-regressions.mjs`: 30 assertions over the real
+sources covering page-range parsing, the image accept filter, byte formatting,
+the sanitiser's URL predicates, the pdf.js CMap/font wiring, and the SEO and
+prerender coupling. It needs no test framework — the repo has no vitest/jest
+dependency, and this was deliberately kept that way rather than adding one.
+
+### Build steps
+
+`pnpm build` chains these scripts after `vite build`, in this order:
+
+| Step | What it adds |
+| --- | --- |
+| `scripts/prerender.mjs` | `dist/<slug>/index.html` per tool, sitemap, robots, 404 |
+| `scripts/csp-hash.mjs` | the inline script's SHA-256 into `dist/_headers` |
+| `scripts/build-sw.mjs` | a real precache list and content-hashed cache version |
+| `vite` (already run) | bundles, plus pdf.js `cmaps/` and `standard_fonts/` |
+
+Order matters: the CSP hash is computed from the built `index.html`, and the
+service-worker precache list is built from whatever files exist in `dist/`.
 
 ## Deploy
 
@@ -166,19 +200,43 @@ semantics so you can check a change locally before deploying.
 src/
   assets/         fonts (Graphik, Bodoni Moda) and the brand mark
   components/     shell, tool page, cards, uploader, page grid, result views
-  content/        generated tool catalogue (copy + icons + nav groups)
+  content/        tool catalogue, icons, nav groups, long-form SEO copy
   hooks/          theme, install prompt
-  lib/            PDF engine (pdf-lib + pdf.js) and format helpers
+  lib/            PDF engine, image engine, ranges, sanitiser, format helpers
   pages/          home, not-found
   styles/         Tailwind entry, design tokens, dark theme
   tools/          one module per tool family, plus the lazy registry
   types.ts        shared domain types
+
+scripts/
+  prerender.mjs      per-route HTML, sitemap, robots, 404
+  csp-hash.mjs       inline-script hash -> _headers
+  build-sw.mjs       service-worker precache list + cache version
+  check-regressions.mjs   dependency-free assertions (pnpm test)
+  cf-sim.mjs         serve dist/ with Cloudflare routing + header semantics
 ```
+
+Note that `src/lib/` is split so the PDF engine stays off the landing page's
+critical path: `format.ts`, `ranges.ts` and `sanitize.ts` have no heavy
+dependencies, and `pdf.ts` is imported dynamically by the components that need
+it. A static `import '@/lib/pdf'` anywhere on the landing graph re-couples
+pdf-lib and pdf.js to first paint.
 
 Each tool is a `ToolImpl`: a `Panel` for the options column, an optional
 `Workarea` for canvas content such as page grids, and a `run()` returning
 `ResultFile[]`. Tool modules load on demand, so the landing page never downloads
 the PDF engine.
 
-`src/content/tools.ts` is generated from `_gen/gen-tools.mjs`; edit the generator
-(not the output) when changing catalogue copy or the header nav.
+### Catalogues and copy
+
+- `src/content/tools.ts` holds the 23 PDF entries and the nav groups;
+  `src/content/imageTools.ts` holds the 13 image entries. Together they register
+  36 routes, of which 30 are visible.
+- `src/content/toolSeo.ts` holds the long-form copy each prerendered page
+  carries: lead paragraph, how-to steps, FAQ and a tool-specific privacy note.
+
+`_gen/gen-tools.mjs` was a one-off bootstrap that read the v1 catalogue from
+`_legacy-src/` to carry the 23 original definitions over with their inline SVG
+icons. **Do not re-run it.** It only knows that legacy set, and `tools.ts` has
+been edited by hand many times since — running it would overwrite those edits.
+It is kept for reference only.

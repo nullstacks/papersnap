@@ -331,6 +331,70 @@ test('prerender injects crawlable body content', () => {
   );
 });
 
+/* -------------------------------------------------------- PDF unlock logic */
+
+console.log('\nunlock decision path (src/tools/security.tsx)');
+
+/*
+ * Guests this bug: the empty string is a REAL password.
+ *
+ * Most "protected" PDFs carry an owner password only, with an empty user
+ * password — they open in any viewer without prompting. The tool converted
+ * "no password typed" to `undefined`, pdf-lib refused the encrypted document,
+ * the error matched /encrypt/, and the visitor was told their file needed a
+ * password they had never set. Every owner-only PDF failed.
+ */
+const securitySource = readFileSync(path.join(root, 'src/tools/security.tsx'), 'utf8');
+
+/*
+ * Bound the slice to the unlock implementation. Running to end-of-file would
+ * also capture the Protect tool, which genuinely calls doc.save() on a document
+ * it just encrypted — that is correct behaviour there, and matching it here
+ * would report a regression that does not exist.
+ */
+const unlockStart = securitySource.indexOf('async function openDecrypted');
+const protectAt = securitySource.indexOf('export const protectTool');
+const openFn = securitySource.slice(unlockStart, protectAt > 0 ? protectAt : undefined);
+assert.ok(protectAt > unlockStart, 'could not bound the unlock block; fix this test rather than the code');
+
+test('an empty password is attempted, not converted to undefined', () => {
+  assert.ok(
+    /candidates\.push\(''\)/.test(openFn),
+    'openDecrypted must try "" — passing undefined makes pdf-lib refuse owner-only PDFs',
+  );
+});
+
+test('a typed password takes precedence over the empty fallback', () => {
+  assert.ok(/if \(typed\)/.test(openFn), 'typed passwords must be tried first');
+  /* Assert on executable code, not prose: the comment above the function quotes
+   * the old `password || undefined` expression to explain the bug, so a naive
+   * source-wide match reports a regression that does not exist. */
+  const codeOnly = securitySource
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n]*/g, '');
+  assert.ok(
+    !/password \|\| undefined/.test(codeOnly),
+    'the old "password || undefined" coercion is the bug; it must not return',
+  );
+});
+
+test('unlock rebuilds instead of re-saving the opened document', () => {
+  assert.ok(/out\.copyPages/.test(openFn), 'unlock must rebuild pages into a fresh document');
+  /* Strip comments first: the doc comment explains that save() re-emits the
+   * trailer, and that mention is not a regression. */
+  const codeOnly = openFn
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n]*/g, '');
+  assert.ok(
+    !/doc\.save\(\)/.test(codeOnly),
+    'saving the opened document preserves /Encrypt and leaves the file still locked',
+  );
+});
+
+test('the /Encrypt dictionary check exists so plain files pass through untouched', () => {
+  assert.ok(/bytesHasEncryptDict/.test(securitySource), 'plain files must not be rewritten');
+});
+
 /* ------------------------------------------------------------------ report */
 
 console.log(`\n${passed} passed, ${failed} failed`);

@@ -11,9 +11,7 @@ import {
   baseName,
   bytesFor,
   loadToolPdf,
-  loadPdfStrict,
   pdfResult,
-  rebuildWithoutEncryption,
 } from '@/lib/pdf';
 import type { FieldValues, PanelProps, ResultFile, ToolImpl } from '@/types';
 
@@ -118,6 +116,49 @@ function CheckRow({
 
 /* ============================ UNLOCK ============================ */
 
+/**
+ * Open a protected document, guessing the password the way a viewer would.
+ *
+ * The empty string is a REAL password and has to be tried first.
+ *
+ * Most protected PDFs in the wild are not "locked" in the sense people expect:
+ * they carry an owner password only, with an EMPTY user password. Any viewer
+ * opens them without a prompt — that is how "restricted printing/copying"
+ * files behave. In the encryption dictionary that empty user password is
+ * literally `password: ''`, and `PDFDocument.load` decrypts with it happily.
+ *
+ * The bug this replaces passed `password || undefined`, which turned "" into
+ * undefined. pdf-lib then refused the file outright ("Input document to
+ * PDFDocument.load is encrypted"), the error matched /encrypt/, and the tool
+ * told the visitor their file needed a password they had never set. Every
+ * owner-only PDF — the single most common kind — failed.
+ */
+async function openDecrypted(bytes: Uint8Array, typed: string) {
+  const candidates: string[] = [];
+  if (typed) {
+    candidates.push(typed);
+  } else {
+    /* No password typed: try the empty user password first, which is what a
+     * viewer does when it opens the file without prompting. */
+    candidates.push('');
+  }
+
+  let lastError: unknown = null;
+  for (const candidate of candidates) {
+    try {
+      const doc = await PDFDocument.load(bytes, {
+        password: candidate,
+        updateMetadata: false,
+      });
+      if (!doc.isEncrypted) return doc;
+      lastError = new Error('still encrypted');
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError ?? new Error('This PDF could not be decrypted.');
+}
+
 async function unlockedBytes(bytes: Uint8Array, password: string): Promise<Uint8Array> {
   /*
    * Unlocking is a REBUILD, never a re-save.
@@ -127,22 +168,10 @@ async function unlockedBytes(bytes: Uint8Array, password: string): Promise<Uint8
    * back out: the "unlocked" file was byte-identical in protection to the
    * input and any viewer still demanded the password. Copying the pages into a
    * fresh document drops /Encrypt along with every other inherited object.
-   *
-   * The strict load stays as the gate: with `ignoreEncryption` a WRONG
-   * password loads happily and keeps its /Encrypt dictionary, so the rejection
-   * would never surface. Here pdf-lib throws "Password incorrect" instead.
    */
+  let doc;
   try {
-    const doc = await loadPdfStrict(bytes, password || undefined);
-    if (!doc.isEncrypted) {
-      /* Not protected at all: hand back the original bytes untouched rather
-       * than a re-serialised copy that could shift the layout. */
-      return bytes;
-    }
-    /* Opened with the password: when the user password was empty pdf-lib can
-     * decrypt, but the /Encrypt dict is still present in the parsed document.
-     * Always rebuild so the output genuinely has no encryption dictionary. */
-    return rebuildWithoutEncryption(bytes, password || undefined);
+    doc = await openDecrypted(bytes, password);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (/password|encrypt|decrypt/i.test(message)) {
@@ -152,9 +181,38 @@ async function unlockedBytes(bytes: Uint8Array, password: string): Promise<Uint8
           : 'This PDF is password protected. Enter its password to unlock it.',
       );
     }
-    /* An unrelated parse failure: fall back to the structural rebuild. */
-    return rebuildWithoutEncryption(bytes, password || undefined);
+    throw new Error(`This PDF could not be read: ${message}`);
   }
+
+  /* Genuinely unprotected input: hand back the original bytes untouched rather
+   * than a re-serialised copy that could shift the layout. */
+  if (!bytesHasEncryptDict(bytes)) return bytes;
+
+  /* Rebuild so the output has no encryption dictionary at all. */
+  const out = await PDFDocument.create();
+  const pages = await out.copyPages(doc, doc.getPageIndices());
+  for (const page of pages) out.addPage(page);
+  return out.save();
+}
+
+/**
+ * Cheap structural check for an /Encrypt entry.
+ *
+ * `isEncrypted` is false once pdf-lib has decrypted in memory, so it cannot
+ * tell us whether the bytes on disk are protected — and re-serialising an
+ * unprotected file would rewrite it for no reason.
+ */
+function bytesHasEncryptDict(bytes: Uint8Array): boolean {
+  const needle = [0x2f, 0x45, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74]; // "/Encrypt"
+  const limit = bytes.length - needle.length;
+  for (let i = 0; i <= limit; i++) {
+    let hit = true;
+    for (let j = 0; j < needle.length; j++) {
+      if (bytes[i + j] !== needle[j]) { hit = false; break; }
+    }
+    if (hit) return true;
+  }
+  return false;
 }
 
 function UnlockPanel({ values, setValue }: PanelProps) {

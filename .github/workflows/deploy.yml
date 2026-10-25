@@ -98,14 +98,22 @@ jobs:
           name: dist
           path: dist
 
-      # Deploys the prebuilt dist/ — this Worker has no script, only assets.
-      # `wranglerVersion` pins the action to the version in package.json instead
-      # of installing its own default (3.90.0), which predates options this
-      # wrangler.toml relies on.
+      # Deploy with the project's own wrangler rather than
+      # cloudflare/wrangler-action.
+      #
+      # The action installs wrangler itself (`pnpm add wrangler@<version>`) into
+      # this workspace on every run. Under pnpm v11 that install is subject to
+      # the build-script policy in pnpm-workspace.yaml, so it aborted with
+      # ERR_PNPM_IGNORED_BUILDS for whatever transitive binary the action's
+      # dependency tree pulled in — first workerd, then sharp. Chasing each one
+      # through allowBuilds means the workflow breaks again every time the
+      # action's tree changes.
+      #
+      # Calling the pinned, already-installed binary directly removes that
+      # failure mode entirely and guarantees CI runs the same wrangler that
+      # `pnpm deploy` uses locally.
       - name: Publish
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: '4.42.0'
-          command: deploy
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

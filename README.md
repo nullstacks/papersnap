@@ -10,18 +10,27 @@ Every tool runs inside the browser tab: no server, no uploads, no accounts.
 | UI | React 19 + TypeScript (strict) |
 | Build | Vite 6 |
 | Styling | Tailwind CSS v4 (design tokens in `src/styles/index.css`) |
-| Routing | React Router 7, **HashRouter** |
+| Routing | React Router 7, **BrowserRouter** over prerendered paths |
+| Hosting | Cloudflare Workers static assets (no Worker script) |
 | PDF structure | `@cantoo/pdf-lib` |
-| PDF rendering / text | `pdfjs-dist` (real worker, bundled) |
-| DOCX / XLSX / PPTX / HTML | `mammoth`, `jszip`, `xlsx`, `pptxgenjs`, `html2canvas` |
+| PDF rendering / text | `pdfjs-dist` (real worker, bundled; cMaps + standard fonts shipped) |
+| DOCX / XLSX / PPTX / HTML | `mammoth`, `jszip`, `xlsx`, `html2canvas` |
 | Wordmark | Bodoni Moda Bold (self-hosted Latin subset) |
 
-### Why HashRouter
+### Why the routes are prerendered
 
-GitHub Pages serves static files with no rewrite rules, so path-based routes
-would 404 on refresh and on shared deep links. Every route lives under `#/`
-(`/#/merge-pdf`), which always resolves to `index.html`. A copy of
-`index.html` is also published as `404.html` so stray paths still boot the app.
+Every tool lives at a real path — `/merge-pdf`, `/compress-image` — not behind a
+hash. `scripts/prerender.mjs` writes `dist/<slug>/index.html` for each visible
+tool at build time, each with its own title, description, canonical URL, Open
+Graph tags and JSON-LD, plus a plain-HTML summary of the page. That summary is
+rendered inside `#root`; React replaces it on mount.
+
+This is what makes the tools findable. The app previously used a HashRouter
+because GitHub Pages has no rewrite rules, which meant all 30 tools shared a
+single indexable URL and the site shipped one description for the whole thing.
+
+Old `/#/slug` links still work: `main.tsx` rewrites them to the path form
+before the router mounts.
 
 ## Tools (30)
 
@@ -113,21 +122,43 @@ pnpm build          # typecheck + production build into dist/
 pnpm preview        # serve the built output
 ```
 
-## Deploy to GitHub Pages
+## Deploy
 
-Pushing to `main` runs `.github/workflows/deploy.yml`, which typechecks, builds
-with `BASE_PATH=/<repo-name>/`, and publishes `dist/`.
-
-Set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**.
-
-To build for a project site manually:
+The site is served from **Cloudflare Workers static assets**. `wrangler.toml`
+declares no Worker script — the deployment is just `dist/` — so a request that
+matches a file never invokes a runtime, is free and unlimited, and the "no
+server" property holds structurally rather than by convention.
 
 ```bash
-BASE_PATH=/your-repo-name/ pnpm build
+pnpm deploy          # build, then wrangler deploy
 ```
 
-The `BASE_PATH` environment variable sets Vite's `base`, so hashed asset URLs
-and the bundled PDF worker resolve correctly under `/<repo>/`.
+Pushing to `main` runs `.github/workflows/deploy.yml`: typecheck, regression
+checks, build, an assertion that the prerendered routes actually exist, then
+`wrangler deploy`. It needs two repository secrets:
+
+| Secret | Where to get it |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard → My Profile → API Tokens → *Edit Cloudflare Workers* template |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → Workers & Pages → Account ID |
+
+`SITE_ORIGIN` in the workflow supplies the absolute origin used for canonical
+URLs, Open Graph tags and the sitemap. Change it if you attach a custom domain.
+
+### Response headers
+
+`public/_headers` is copied verbatim into the build and applied by Cloudflare.
+It carries the Content-Security-Policy that enforces the privacy promise —
+`default-src 'none'`, `connect-src 'self'`, `frame-ancestors 'none'` — plus
+`immutable` caching for hashed bundles. GitHub Pages has no mechanism for
+custom headers at all, which is the main reason the site moved.
+
+The inline theme script in `index.html` needs its SHA-256 in the policy, so
+`scripts/csp-hash.mjs` recomputes it from the built HTML on every build. Do not
+hand-edit that hash.
+
+`scripts/cf-sim.mjs` serves `dist/` with Cloudflare's routing and header
+semantics so you can check a change locally before deploying.
 
 ## Architecture
 

@@ -3,3 +3,7 @@
 # must fetch, and `vite build` fails without it.
 allowBuilds:
   esbuild: true
+  # Wrangler's runtime. Its postinstall downloads the platform binary that
+  # `wrangler deploy` executes; with the build blocked, the Cloudflare deploy
+  # step fails with ERR_PNPM_IGNORED_BUILDS rather than anything actionable.
+  workerd: true

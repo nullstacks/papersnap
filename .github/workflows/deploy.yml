@@ -99,9 +99,13 @@ jobs:
           path: dist
 
       # Deploys the prebuilt dist/ — this Worker has no script, only assets.
+      # `wranglerVersion` pins the action to the version in package.json instead
+      # of installing its own default (3.90.0), which predates options this
+      # wrangler.toml relies on.
       - name: Publish
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.42.0'
           command: deploy

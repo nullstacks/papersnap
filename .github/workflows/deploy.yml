@@ -1,23 +1,29 @@
-name: Deploy to GitHub Pages
+name: Verify and deploy to Cloudflare Workers
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
-# Allow the workflow to publish to Pages.
+# Content is read-only for the build job; the deploy job needs the Cloudflare token.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
-# Only one deploy at a time; newer runs cancel in-progress ones.
 concurrency:
-  group: pages
+  group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Canonical URLs, Open Graph tags and the sitemap all need an absolute origin.
+  # Change this if you attach a custom domain.
+  SITE_ORIGIN: https://papersnap.nullstacks.workers.dev
+  # The site is served from the domain root, so there is no asset prefix.
+  BASE_PATH: /
+
 jobs:
-  build:
+  verify:
+    name: Typecheck, test, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,34 +43,65 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
-      # Pure-logic regression checks (page ranges, accept filter, sanitiser).
+      # Pure-logic regression checks: page ranges, accept filter, sanitiser,
+      # and the pdf.js asset wiring that no build log would reveal.
       - name: Regression checks
         run: pnpm run test
 
-      # Project sites are served from /<repo>/, so the asset base has to match
-      # the repository name. HashRouter keeps every route working regardless.
       - name: Build
         run: pnpm run build
-        env:
-          BASE_PATH: /${{ github.event.repository.name }}/
 
-      # Pages has no rewrite rules; a copy of index.html at 404.html means any
-      # stray path still boots the app instead of showing GitHub's own 404.
-      - name: Add SPA fallback
-        run: cp dist/index.html dist/404.html
+      # The build must have produced a real page per tool; if prerendering
+      # silently stopped working, the routes would 404 and nothing else in the
+      # test suite would notice.
+      - name: Assert prerendered routes exist
+        run: |
+          set -eu
+          missing=0
+          for slug in merge-pdf split-pdf compress-pdf unlock-pdf compress-image photo-editor; do
+            if [ ! -f "dist/$slug/index.html" ]; then echo "::error::missing dist/$slug/index.html"; missing=1; fi
+          done
+          for f in dist/sitemap.xml dist/robots.txt dist/_headers dist/404.html; do
+            if [ ! -f "$f" ]; then echo "::error::missing $f"; missing=1; fi
+          done
+          grep -q 'Content-Security-Policy' dist/_headers || { echo "::error::CSP missing from _headers"; missing=1; }
+          grep -q 'sha256-' dist/_headers || { echo "::error::CSP has no inline script hash"; missing=1; }
+          exit $missing
 
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: dist
           path: dist
+          retention-days: 7
 
   deploy:
-    needs: build
+    name: Deploy to Cloudflare
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      # Deploys the prebuilt dist/ — this Worker has no script, only assets.
+      - name: Publish
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

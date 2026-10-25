@@ -1,0 +1,53 @@
+# Response headers for PaperSnap.
+#
+# This file is the enforcement half of the product's core promise. Until now
+# "nothing leaves your device" was true of the code but enforced by nothing:
+# one dependency upgrade or one injected tag could have started sending data
+# somewhere and nobody would have noticed. A Content-Security-Policy makes the
+# BROWSER refuse those requests, which turns a claim into a property.
+#
+# Built for what the app actually does:
+#   - scripts come from this origin only; there is no inline script in the
+#     build (the theme bootstrap in index.html is inlined, so its hash is
+#     listed below and must be updated if that snippet changes)
+#   - styles need 'unsafe-inline' because React sets style attributes
+#   - images accept data: and blob: (canvas output, generated covers)
+#   - connect-src is 'self' only: the app makes no cross-origin requests
+#   - worker-src allows blob: for the bundled pdf.js worker
+#   - object-src and frame-ancestors are locked down
+#
+# If you change the inline theme script in index.html, regenerate its hash:
+#   node -e "const c=require('crypto'),f=require('fs');
+#     const m=f.readFileSync('index.html','utf8').match(/<script>([\\s\\S]*?)<\\/script>/);
+#     console.log(c.createHash('sha256').update(m[1]).digest('base64'))"
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; manifest-src 'self'; media-src 'self' blob:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+
+# Hashed bundles are immutable: the filename changes whenever the content does.
+# Serving them with a short max-age forced returning visitors to revalidate
+# every script and stylesheet on every visit. This is safe precisely because
+# the names are content-addressed.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The shell itself must stay fresh so a deploy is picked up immediately.
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# pdf.js reads these lazily and only for documents that need them. They change
+# only when pdfjs-dist is upgraded, so they can be cached hard.
+/cmaps/*
+  Cache-Control: public, max-age=31536000, immutable
+/standard_fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The worker script must never be cached, or an update could be missed.
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /

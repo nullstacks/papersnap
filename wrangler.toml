@@ -1,0 +1,27 @@
+# Cloudflare Workers configuration — static assets only.
+#
+# PaperSnap has no backend: every byte is processed in the browser tab. This
+# file therefore declares NO "main" Worker script. The whole deployment is the
+# contents of dist/, served from Cloudflare's edge.
+#
+# That distinction matters beyond simplicity:
+#   - a request that matches a file never invokes a Worker, so it is free and
+#     unlimited on every plan;
+#   - there is no server-side code, so the "nothing leaves your device" promise
+#     remains structurally true rather than merely intended;
+#   - navigation requests are answered by the assets layer, not the runtime.
+#
+# "404-page" (not "single-page-application") because this build prerenders a
+# real index.html per tool route: /merge-pdf is a genuine file that returns
+# 200 with its own title, description and canonical URL. Only genuinely
+# unknown paths fall through to 404.html — which is correct, because those
+# URLs do not exist and should not be indexed.
+name = "papersnap"
+compatibility_date = "2026-10-25"
+
+[assets]
+directory = "./dist"
+not_found_handling = "404-page"
+# Individual files are served without a trailing slash, folder index files
+# with one. /merge-pdf -> /merge-pdf/index.html, no redirect hop.
+html_handling = "auto-trailing-slash"

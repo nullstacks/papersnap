@@ -280,6 +280,57 @@ test('the service worker does not precache the lazy pdf.js assets', () => {
   );
 });
 
+/* ------------------------------------------------------- SEO / prerendering */
+
+console.log('\nSEO wiring (toolSeo.ts, prerender.mjs, main.tsx)');
+
+const seoSource = readFileSync(path.join(root, 'src/content/toolSeo.ts'), 'utf8');
+const prerenderSource = readFileSync(path.join(root, 'scripts/prerender.mjs'), 'utf8');
+const mainSource = readFileSync(path.join(root, 'src/main.tsx'), 'utf8');
+
+test('every visible tool has long-form copy', () => {
+  const catalogue = loadModule('@/content/tools');
+  const seoKeys = new Set([...seoSource.matchAll(/^  '([a-z0-9-]+)': \{/gm)].map((m) => m[1]));
+  const visible = Object.keys(catalogue.ALL_TOOL_BY_SLUG).filter(
+    (s) => !catalogue.ALL_TOOL_BY_SLUG[s].hidden,
+  );
+  const missing = visible.filter((s) => !seoKeys.has(s));
+  assert.deepEqual(missing, [], `no copy for: ${missing.join(', ')}`);
+});
+
+test('copy is substantial enough to rank, not a stub', () => {
+  const entries = [...seoSource.matchAll(/lead:\s*'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1]);
+  assert.ok(entries.length >= 30, `expected >=30 leads, found ${entries.length}`);
+  const short = entries.filter((t) => t.length < 200);
+  assert.deepEqual(short, [], `${short.length} leads under 200 chars`);
+});
+
+test('the router no longer hides routes behind a hash', () => {
+  assert.ok(/BrowserRouter/.test(mainSource), 'BrowserRouter is required for crawlable paths');
+  /* Assert on the JSX usage, not the word: the file's comment legitimately
+   * explains why HashRouter was abandoned, and matching prose would report a
+   * regression that does not exist. */
+  assert.ok(!/<HashRouter/.test(mainSource), 'HashRouter element would collapse every route into one URL');
+  assert.ok(!/from 'react-router-dom'[^;]*HashRouter/.test(mainSource), 'HashRouter must not be imported');
+});
+
+test('legacy hash links are migrated, not broken', () => {
+  assert.ok(/#\//.test(mainSource) && /replaceState/.test(mainSource), 'hash redirect shim missing');
+});
+
+test('prerender emits canonical, per-page title and structured data', () => {
+  for (const token of ['rel="canonical"', 'og:url', 'application/ld+json', 'canonical']) {
+    assert.ok(prerenderSource.includes(token), `prerender does not emit ${token}`);
+  }
+});
+
+test('prerender injects crawlable body content', () => {
+  assert.ok(
+    /<div id="root">\$\{bodyFor/.test(prerenderSource),
+    'prerendered pages must carry real content in #root, not an empty div',
+  );
+});
+
 /* ------------------------------------------------------------------ report */
 
 console.log(`\n${passed} passed, ${failed} failed`);

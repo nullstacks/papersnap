@@ -1,5 +1,9 @@
 # PaperSnap
 
+**[▶ Watch the 23-second launch video](docs/media/launch.mp4)**
+
+[![PaperSnap — launch video](docs/media/poster.jpg)](docs/media/launch.mp4)
+
 A complete, fully local PDF toolkit — a React + TypeScript single-page app.
 Every tool runs inside the browser tab: no server, no uploads, no accounts.
 
